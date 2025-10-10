@@ -1,5 +1,5 @@
-import { Link, useNavigate } from "react-router-dom";
-import { AuthToken, User, FakeData } from "tweeter-shared";
+import { Link } from "react-router-dom";
+import { User } from "tweeter-shared";
 import { useUserNavigation } from "../userInfo/UserHooks";
 
 interface Props {

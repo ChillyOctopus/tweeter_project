@@ -36,3 +36,5 @@ export const useUserNavigation = (featurePath: string) => {
     }
   };
 };
+
+//TODO put extract alias into a presenter, and most of the other logic. The view will have basically event.target.toString, need 'navigate' here in the hook.

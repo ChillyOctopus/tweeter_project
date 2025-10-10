@@ -33,6 +33,7 @@ const Register = () => {
       updateUserInfo(user, user, token, remember),
   } as IRegisterView);
 
+  //TODO You can remove the dependency on ChangeEvent and change the rest of it
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;

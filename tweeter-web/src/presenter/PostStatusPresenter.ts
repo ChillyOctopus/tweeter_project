@@ -1,42 +1,36 @@
 import { AuthToken, Status, User } from "tweeter-shared";
 import { PostService } from "../model.service/PostService";
+import { MessageView, Presenter } from "./Presenter";
 
-interface PostStatusPresenterDeps {
-  displayInfoMessage: (message: string, duration: number) => string;
-  displayErrorMessage: (message: string) => void;
-  deleteMessage: (id: string) => void;
+interface PostStatusView extends MessageView{
   setIsLoading: (loading: boolean) => void;
   setPost: (text: string) => void;
   getAuthToken: () => AuthToken;
   getCurrentUser: () => User;
 }
 
-export class PostStatusPresenter {
-  private deps: PostStatusPresenterDeps;
-  private postService: PostService;
+export class PostStatusPresenter extends Presenter<PostStatusView>{
+    private postService: PostService;
 
-  constructor(deps: PostStatusPresenterDeps) {
-    this.deps = deps;
-    this.postService = new PostService();
-  }
-
-  async submitPost(post: string): Promise<void> {
-    let toastId = "";
-    const { deps } = this;
-    try {
-      deps.setIsLoading(true);
-      toastId = deps.displayInfoMessage("Posting status...", 0);
-
-      const newStatus = new Status(post, deps.getCurrentUser(), Date.now());
-      await this.postService.postStatus(deps.getAuthToken(), newStatus);
-
-      deps.setPost("");
-      deps.displayInfoMessage("Status posted!", 2000);
-    } catch (error) {
-      deps.displayErrorMessage(`Failed to post the status because of exception: ${error}`);
-    } finally {
-      deps.deleteMessage(toastId);
-      deps.setIsLoading(false);
+    constructor(view: PostStatusView) {
+        super(view)
+        this.postService = new PostService();
     }
-  }
+
+    async submitPost(post: string): Promise<void> {
+        let toastId = "";
+        this.doFailureReportingOperation(async () => {
+            this.view.setIsLoading(true);
+            toastId = this.view.displayInfoMessage("Posting status...", 0);
+            const newStatus = new Status(post, this.view.getCurrentUser(), Date.now());
+            await this.postService.postStatus(this.view.getAuthToken(), newStatus);
+            this.view.setPost("");
+            this.view.displayInfoMessage("Status posted!", 2000);
+        }, "post the status", toastId);
+    }
+    
+    protected doFinallyOperations(id?: string): void {
+        if (id != null) this.view.deleteMessage(id);
+        this.view.setIsLoading(false);
+    }
 }

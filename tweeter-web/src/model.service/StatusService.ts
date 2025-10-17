@@ -7,8 +7,7 @@ export class StatusService {
     pageSize: number,
     lastItem: Status | null
   ): Promise<[Status[], boolean]> {
-    // TODO: Replace with real server call
-    return FakeData.instance.getPageOfStatuses(lastItem, pageSize);
+    return this.loadMoreStoryOrFeed(authToken, userAlias, pageSize, lastItem, false);
   }
 
   public async loadMoreStory(
@@ -17,7 +16,16 @@ export class StatusService {
     pageSize: number,
     lastItem: Status | null
   ): Promise<[Status[], boolean]> {
-    // TODO: Replace with real server call
+    return this.loadMoreStoryOrFeed(authToken, userAlias, pageSize, lastItem, true);
+  }
+
+  private async loadMoreStoryOrFeed(
+    authToken: AuthToken,
+    userAlias: string,
+    pageSize: number,
+    lastItem: Status | null,
+    fetchStory: boolean
+  ): Promise<[Status[], boolean]> {
     return FakeData.instance.getPageOfStatuses(lastItem, pageSize);
   }
 }

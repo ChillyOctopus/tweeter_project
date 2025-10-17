@@ -58,14 +58,14 @@ const UserInfo = () => {
   const handleFollow = (event: React.MouseEvent): void => {
     event.preventDefault();
     if (authToken && displayedUser) {
-      presenterRef.current!.followUser(authToken, displayedUser);
+      presenterRef.current!.follow_unfollow(authToken, displayedUser, true);
     }
   };
 
   const handleUnfollow = (event: React.MouseEvent): void => {
     event.preventDefault();
     if (authToken && displayedUser) {
-      presenterRef.current!.unfollowUser(authToken, displayedUser);
+      presenterRef.current!.follow_unfollow(authToken, displayedUser, false);
     }
   };
 

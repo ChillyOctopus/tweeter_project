@@ -1,16 +1,23 @@
 // src/auth/views/RegisterView.tsx
 import "./Register.css";
 import "bootstrap/dist/css/bootstrap.css";
-import { useState, ChangeEvent } from "react";
+import { useState, ChangeEvent, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AuthenticationFormLayout from "../AuthenticationFormLayout";
 import AuthenticationFields from "../AuthenticationFields";
 import { useMessageActions } from "../../toaster/MessageHooks";
 import { useUserInfoActions } from "../../userInfo/UserHooks";
-import { RegisterPresenter, RegisterView as IRegisterView } from "../../../presenter/RegisterPresenter";
+import { RegisterPresenter } from "../../../presenter/RegisterPresenter";
 import { AuthToken, User } from "tweeter-shared";
+import { LoginRegisterView } from "../../../presenter/AccessPresenter";
 
-const Register = () => {
+interface Props {
+  uuid: string;
+  originalUrl?: string;
+  presenterFactory: (view: LoginRegisterView) => RegisterPresenter;
+}
+
+const Register = (props: Props) => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [alias, setAlias] = useState("");
@@ -25,26 +32,48 @@ const Register = () => {
   const { displayErrorMessage } = useMessageActions();
   const { updateUserInfo } = useUserInfoActions();
 
-  const presenter = new RegisterPresenter({
-    showError: displayErrorMessage,
-    showLoading: setIsLoading,
-    navigateToFeed: (alias: string) => navigate(`/feed/${alias}`),
-    updateUserInfo: (user: User, token: AuthToken, remember: boolean) =>
-      updateUserInfo(user, user, token, remember),
-  } as IRegisterView);
+  const listener: LoginRegisterView = {
+    showLoading: (isLoading: boolean) => setIsLoading(isLoading),
+    navigateToFeed: (alias: string) => {
+      if (props.originalUrl) {
+        window.location.href = props.originalUrl;
+      } else {
+        navigate(`/${alias}`);
+      }
+    },
+    updateUserInfo: (user: User, token: AuthToken, rememberMe: boolean) => {
+      updateUserInfo(user, null, token, rememberMe);
+    },
+    displayErrorMessage: displayErrorMessage
+  };
+
+  const presenterRef = useRef<RegisterPresenter | null>(null);
+  if (!presenterRef.current) {
+    presenterRef.current = props.presenterFactory(listener);
+  }
+
+  const checkSubmitButtonStatus = (): boolean => {
+    return !alias || !password;
+  };
+  
+  const registerOnEnter = (event: React.KeyboardEvent<HTMLElement>) => {
+    if (event.key == "Enter" && !checkSubmitButtonStatus()) {
+      doRegister();
+    }
+  };
 
   //TODO You can remove the dependency on ChangeEvent and change the rest of it
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setImageUrl(URL.createObjectURL(file));
-    const ext = presenter.getFileExtension(file);
+    const ext = presenterRef.current!.getFileExtension(file);
     if (ext) setImageFileExtension(ext);
-    presenter.fileToBytes(file, setImageBytes);
+    presenterRef.current!.fileToBytes(file, setImageBytes);
   };
 
   const doRegister = () =>
-    presenter.register(
+    presenterRef.current!.register(
       firstName,
       lastName,
       alias,
@@ -74,6 +103,7 @@ const Register = () => {
             <label htmlFor="lastNameInput">Last Name</label>
           </div>
           <AuthenticationFields
+            onKeyDownFn={registerOnEnter}
             alias={alias} setAlias={setAlias}
             password={password} setPassword={setPassword}
           />

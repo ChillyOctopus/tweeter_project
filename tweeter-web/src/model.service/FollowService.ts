@@ -7,8 +7,7 @@ export class FollowService {
     pageSize: number,
     lastItem: User | null
     ): Promise<[User[], boolean]> {
-    // TODO: Replace with the result of calling server
-    return FakeData.instance.getPageOfUsers(lastItem, pageSize, userAlias);
+    return this.loadMoreFollowersOrFollowees(authToken, userAlias, pageSize, lastItem, false);
     };
     
     public async loadMoreFollowers (
@@ -17,7 +16,16 @@ export class FollowService {
     pageSize: number,
     lastItem: User | null
     ): Promise<[User[], boolean]>  {
-    // TODO: Replace with the result of calling server
+    return this.loadMoreFollowersOrFollowees(authToken, userAlias, pageSize, lastItem, true);
+    };
+
+    private async loadMoreFollowersOrFollowees (
+    authToken: AuthToken,
+    userAlias: string,
+    pageSize: number,
+    lastItem: User | null,
+    fetchFollowers: boolean
+    ): Promise<[User[], boolean]> {
     return FakeData.instance.getPageOfUsers(lastItem, pageSize, userAlias);
     };
 }

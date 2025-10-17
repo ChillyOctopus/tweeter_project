@@ -10,19 +10,4 @@ export class RegisterPresenter extends AccessPresenter {
             this.endAccess(user, token, rememberMe);
           }, "register user");
     }
-
-    getFileExtension(file: File): string | undefined {
-        return file.name.split(".").pop();
-    }
-
-    fileToBytes(file: File, callback: (bytes: Uint8Array) => void): void {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const result = event.target?.result as string;
-            const base64 = result.split("base64,")[1];
-            const bytes = Buffer.from(base64, "base64");
-            callback(bytes);
-        };
-        reader.readAsDataURL(file);
-    }
 }

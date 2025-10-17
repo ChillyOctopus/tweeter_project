@@ -8,22 +8,22 @@ export interface PagedItemView<T> extends View {
     addItems: (newItems: T[]) => void;
 }
 
-export abstract class PagedItemPresenter<T, U> extends Presenter<PagedItemView<T>> {
+export abstract class PagedItemPresenter<I, S> extends Presenter<PagedItemView<I>> {
     private _hasMoreItems = true;
-    private _lastItem: T | null = null;
+    private _lastItem: I | null = null;
     private userService: UserService = new UserService();
-    private _service: U;
+    private _service: S;
 
-    public constructor(view: PagedItemView<T>) {
+    public constructor(view: PagedItemView<I>) {
         super(view);
         this._service = this.serviceFactory();
     }
 
-    public get lastItem(): T | null {
+    public get lastItem(): I | null {
         return this._lastItem;
     }
 
-    protected set lastItem(value: T | null) {
+    protected set lastItem(value: I | null) {
         this._lastItem = value;
     }
 
@@ -35,7 +35,7 @@ export abstract class PagedItemPresenter<T, U> extends Presenter<PagedItemView<T
         this._hasMoreItems = value;
     }
 
-    protected get service(): U {
+    protected get service(): S {
         return this._service;
     }
 
@@ -53,9 +53,9 @@ export abstract class PagedItemPresenter<T, U> extends Presenter<PagedItemView<T
 
     protected abstract itemDescription(): string;
     
-    protected abstract serviceFactory(): U; 
+    protected abstract serviceFactory(): S; 
 
-    protected abstract getMoreItems(authToken: AuthToken, userAlias: string): Promise<[T[], boolean]>;
+    protected abstract getMoreItems(authToken: AuthToken, userAlias: string): Promise<[I[], boolean]>;
 
     reset() {
         this._lastItem = null;

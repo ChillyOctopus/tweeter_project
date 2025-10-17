@@ -10,8 +10,6 @@ import Login from "./components/authentication/login/Login";
 import Register from "./components/authentication/register/Register";
 import MainLayout from "./components/mainLayout/MainLayout";
 import Toaster from "./components/toaster/Toaster";
-import UserItemScroller from "./components/mainLayout/UserItemScroller";
-import StatusItemScroller from "./components/mainLayout/StatusItemScroller";
 import { useUserInfo } from "./components/userInfo/UserHooks";
 import { FolloweePresenter } from "./presenter/FolloweePresenter";
 import { FollowerPresenter } from "./presenter/FollowerPresenter";
@@ -19,6 +17,12 @@ import { FeedPresenter } from "./presenter/FeedPresenter";
 import { StoryPresenter } from "./presenter/StoryPresenter";
 import { PagedItemView } from "./presenter/PagedItemPresenter";
 import { Status, User } from "tweeter-shared";
+import { LoginRegisterView } from "./presenter/AccessPresenter";
+import { LoginPresenter } from "./presenter/LoginPresenter";
+import { RegisterPresenter } from "./presenter/RegisterPresenter";
+import UserItem from "./components/userItem/UserItem";
+import ItemScroller from "./components/mainLayout/ItemScroller";
+import StatusItem from "./components/statusItem/StatusItem";
 
 const App = () => {
   const { currentUser, authToken } = useUserInfo();
@@ -48,10 +52,10 @@ const AuthenticatedRoutes = () => {
     <Routes>
       <Route element={<MainLayout />}>
         <Route index element={<Navigate to={`/feed/${displayedUser!.alias}`} />} />
-        <Route path="feed/:displayedUser" element={<StatusItemScroller uuid={`feed-${displayedUser!.alias}`} featureUrl="/feed" presenterFactory={(view: PagedItemView<Status>) => new FeedPresenter(view)}/>} />
-        <Route path="story/:displayedUser" element={<StatusItemScroller uuid={`story-${displayedUser!.alias}`} featureUrl="/story" presenterFactory={(view: PagedItemView<Status>) => new StoryPresenter(view)}/>} />
-        <Route path="followees/:displayedUser" element={<UserItemScroller uuid={`followees-${displayedUser!.alias}`} featureUrl="/followees" presenterFactory={(view: PagedItemView<User>) => new FolloweePresenter(view)}/>} />
-        <Route path="followers/:displayedUser" element={<UserItemScroller uuid={`followers-${displayedUser!.alias}`} featureUrl="/followers" presenterFactory={(view: PagedItemView<User>) => new FollowerPresenter(view)}/>} />
+        <Route path="feed/:displayedUser" element={<ItemScroller uuid={`feed-${displayedUser!.alias}`} presenterFactory={(view: PagedItemView<Status>) => new FeedPresenter(view)} renderItem={(status: Status) => (<StatusItem item={status} featurePath={"/feed"} /> )} /> } />
+        <Route path="story/:displayedUser" element={<ItemScroller uuid={`story-${displayedUser!.alias}`} presenterFactory={(view: PagedItemView<Status>) => new StoryPresenter(view)} renderItem={(status: Status) => (<StatusItem item={status} featurePath={"/story"} /> )}/>} />
+        <Route path="followees/:displayedUser" element={<ItemScroller uuid={`followees-${displayedUser!.alias}`} presenterFactory={(view: PagedItemView<User>) => new FolloweePresenter(view)} renderItem={(user: User) => (<UserItem user={user} featurePath={"/followees"} /> )}/>} />
+        <Route path="followers/:displayedUser" element={<ItemScroller uuid={`followers-${displayedUser!.alias}`} presenterFactory={(view: PagedItemView<User>) => new FollowerPresenter(view)} renderItem={(user: User) => (<UserItem user={user} featurePath={"/followees"} /> )}/>} />
         <Route path="logout" element={<Navigate to="/login" />} />
         <Route path="*" element={<Navigate to={`/feed/${displayedUser!.alias}`} />} />
       </Route>
@@ -64,9 +68,9 @@ const UnauthenticatedRoutes = () => {
 
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="*" element={<Login originalUrl={location.pathname} />} />
+      <Route path="/login" element={<Login uuid={`login-${location.hash}`} originalUrl="/login" presenterFactory={(view: LoginRegisterView) => new LoginPresenter(view)} />} />
+      <Route path="/register" element={<Register uuid={`register-${location.hash}`} originalUrl="/register" presenterFactory={(view: LoginRegisterView) => new RegisterPresenter(view)} />} />
+      <Route path="*" element={<Login uuid={`login-${location.hash}`} originalUrl={location.pathname} presenterFactory={(view: LoginRegisterView) => new LoginPresenter(view)} />} />
     </Routes>
   );
 };

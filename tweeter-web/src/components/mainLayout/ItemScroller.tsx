@@ -3,29 +3,29 @@ import InfiniteScroll from "react-infinite-scroll-component";
 import { useMessageActions } from "../toaster/MessageHooks";
 import { useParams } from "react-router-dom";
 import { useUserInfo, useUserInfoActions } from "../userInfo/UserHooks";
-import { PagedItemPresenter, PagedItemView } from "../../presenter/PagedItemPresenter";
+import { PagedItemView } from "../../presenter/PagedItemPresenter";
 import { UserItemPresenter } from "../../presenter/UserItemPresenter";
 import { StatusItemPresenter } from "../../presenter/StatusItemPresenter";
 
-interface Props<T, P> {
+interface Props<I, S> {
   uuid: string;
-  presenterFactory: (view: PagedItemView<T>) => P;
-  renderItem: (item: T, index: number) => ReactNode;
+  presenterFactory: (view: PagedItemView<I>) => S;
+  renderItem: (item: I, index: number) => ReactNode;
 }
 
-export default function PagedItemScroller<T, P extends UserItemPresenter | StatusItemPresenter>(props: Props<T, P>) {
+export default function PagedItemScroller<I, S extends UserItemPresenter | StatusItemPresenter>(props: Props<I, S>) {
   const { displayErrorMessage } = useMessageActions();
-  const [items, setItems] = useState<T[]>([]);
+  const [items, setItems] = useState<I[]>([]);
   const { displayedUser, authToken } = useUserInfo();
   const { setDisplayedUser } = useUserInfoActions();
   const { displayedUser: displayedUserAliasParam } = useParams();
 
-  const listener: PagedItemView<T> = {
-    addItems: (newItems: T[]) => setItems((prev) => [...prev, ...newItems]),
+  const listener: PagedItemView<I> = {
+    addItems: (newItems: I[]) => setItems((prev) => [...prev, ...newItems]),
     displayErrorMessage,
   };
 
-  const presenterRef = useRef<P | null>(null);
+  const presenterRef = useRef<S | null>(null);
   if (!presenterRef.current) {
     presenterRef.current = props.presenterFactory(listener);
   }
@@ -44,9 +44,10 @@ export default function PagedItemScroller<T, P extends UserItemPresenter | Statu
   }, [displayedUserAliasParam]);
 
   useEffect(() => {
+    presenterRef.current = props.presenterFactory(listener);
     reset();
     loadMoreItems();
-  }, [displayedUser]);
+  }, [props.uuid]);
 
   const reset = async () => {
     setItems([]);

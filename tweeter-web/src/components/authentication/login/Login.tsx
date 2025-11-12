@@ -13,7 +13,6 @@ import { LoginRegisterView } from "../../../presenter/AccessPresenter";
 
 interface Props {
   uuid: string;
-  originalUrl?: string;
   presenterFactory: (view: LoginRegisterView) => LoginPresenter;
 }
 
@@ -30,14 +29,10 @@ const Login = (props: Props) => {
   const listener: LoginRegisterView = {
     showLoading: (isLoading: boolean) => setIsLoading(isLoading),
     navigateToFeed: (alias: string) => {
-      if (props.originalUrl) {
-        window.location.href = props.originalUrl;
-      } else {
-        navigate(`/${alias}`);
-      }
+      navigate(`/${alias}`);
     },
     updateUserInfo: (user: User, token: AuthToken, rememberMe: boolean) => {
-      updateUserInfo(user, null, token, rememberMe);
+      updateUserInfo(user, user, token, rememberMe);
     },
     displayErrorMessage: displayErrorMessage
   };
@@ -83,5 +78,3 @@ const Login = (props: Props) => {
 };
 
 export default Login;
-
-// TODO ILoginView should probably not be casted, make typescript tell you what to do. const listener.

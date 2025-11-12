@@ -13,7 +13,6 @@ import { LoginRegisterView } from "../../../presenter/AccessPresenter";
 
 interface Props {
   uuid: string;
-  originalUrl?: string;
   presenterFactory: (view: LoginRegisterView) => RegisterPresenter;
 }
 
@@ -35,14 +34,10 @@ const Register = (props: Props) => {
   const listener: LoginRegisterView = {
     showLoading: (isLoading: boolean) => setIsLoading(isLoading),
     navigateToFeed: (alias: string) => {
-      if (props.originalUrl) {
-        window.location.href = props.originalUrl;
-      } else {
-        navigate(`/${alias}`);
-      }
+      navigate(`/${alias}`);
     },
     updateUserInfo: (user: User, token: AuthToken, rememberMe: boolean) => {
-      updateUserInfo(user, null, token, rememberMe);
+      updateUserInfo(user, user, token, rememberMe);
     },
     displayErrorMessage: displayErrorMessage
   };
@@ -62,7 +57,6 @@ const Register = (props: Props) => {
     }
   };
 
-  //TODO You can remove the dependency on ChangeEvent and change the rest of it
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;

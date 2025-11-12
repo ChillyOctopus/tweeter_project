@@ -31,7 +31,7 @@ export class UserInfoPresenter extends Presenter<UserInfoView> {
             messageId = this.view.displayInfoMessage(`${follow ? "Following " : "Unfollowing "} ${user.name}...`, 0);
             follow ? await this.userService.follow(authToken, user) : await this.userService.unfollow(authToken, user);
 
-            this.setCounts(false, authToken, user);
+            this.setCounts(follow, authToken, user);
         }, follow ? "follow user" : "unfollow user", messageId);
     }
 

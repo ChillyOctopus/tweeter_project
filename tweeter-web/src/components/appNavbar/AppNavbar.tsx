@@ -5,7 +5,7 @@ import Image from "react-bootstrap/Image";
 import { useNavigate } from "react-router-dom";
 import { useUserInfo, useUserInfoActions } from "../userInfo/UserHooks";
 import { useMessageActions } from "../toaster/MessageHooks";
-import NavbarPresenter, { NavbarView } from "../../presenter/NavBarPresenter";
+import NavbarPresenter, { NavBarView } from "../../presenter/NavBarPresenter";
 
 const AppNavbar = () => {
   const location = useLocation();
@@ -14,7 +14,7 @@ const AppNavbar = () => {
   const navigate = useNavigate();
   const { displayInfoMessage, displayErrorMessage, deleteMessage } = useMessageActions();
 
-  const view: NavbarView = {
+  const view: NavBarView = {
     displayInfoMessage,
     displayErrorMessage,
     deleteMessage,

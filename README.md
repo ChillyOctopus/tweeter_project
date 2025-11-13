@@ -32,3 +32,5 @@ Notes for M2A:
     'PostStatus' is an example of what needs to be changed that doesn't deal with FakeData. Three service classes, one for each functionality.
     Each view only has one presenter. There can be multiple services though.
     Check every component and the UserNavigationHook can almost all go into a presenter.
+
+    cd ~/jacob/byu/340/tweeter-web-starter/tweeter-shared/ && npm run build && cd ~/jacob/byu/340/tweeter-web-starter/tweeter-web/ && npm run build && npm start

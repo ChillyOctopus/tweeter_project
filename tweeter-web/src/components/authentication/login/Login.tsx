@@ -1,7 +1,6 @@
-// src/auth/views/LoginView.tsx
 import "./Login.css";
 import "bootstrap/dist/css/bootstrap.css";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AuthenticationFormLayout from "../AuthenticationFormLayout";
 import AuthenticationFields from "../AuthenticationFields";
@@ -13,7 +12,7 @@ import { LoginRegisterView } from "../../../presenter/AccessPresenter";
 
 interface Props {
   uuid: string;
-  presenterFactory: (view: LoginRegisterView) => LoginPresenter;
+  presenter?: LoginPresenter;
 }
 
 const Login = (props: Props) => {
@@ -39,7 +38,7 @@ const Login = (props: Props) => {
 
   const presenterRef = useRef<LoginPresenter | null>(null);
   if (!presenterRef.current) {
-    presenterRef.current = props.presenterFactory(listener);
+    presenterRef.current = props.presenter ?? new LoginPresenter(listener);
   }
 
   const doLogin = () => presenterRef.current!.login(alias, password, rememberMe);
@@ -53,6 +52,10 @@ const Login = (props: Props) => {
       doLogin();
     }
   };
+
+  useEffect(() => {
+    presenterRef.current = props.presenter ?? new LoginPresenter(listener);
+  }, [rememberMe])
 
   return (
     <AuthenticationFormLayout

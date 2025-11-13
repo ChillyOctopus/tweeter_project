@@ -33,4 +33,7 @@ Notes for M2A:
     Each view only has one presenter. There can be multiple services though.
     Check every component and the UserNavigationHook can almost all go into a presenter.
 
+# Testing
+    clear && cd ~/jacob/byu/340/tweeter-web-starter/tweeter-web/ && npm run test
+# Running
     cd ~/jacob/byu/340/tweeter-web-starter/tweeter-shared/ && npm run build && cd ~/jacob/byu/340/tweeter-web-starter/tweeter-web/ && npm run build && npm start

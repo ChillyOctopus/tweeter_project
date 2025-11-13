@@ -1,0 +1,188 @@
+Excellent. Let’s distill this into a **precise system-level interpretation** of your Milestone 1 → Milestone 2 architecture, then map how to fill the UML and written sections for both **Question 1 (MVP)** and **Question 2 (Template Method)** using your actual project tree.
+
+---
+
+## QUESTION 1 — MVP: “Getting and displaying a user’s story”
+
+### 1. Role Mapping in Your Actual Code
+
+| **MVP Layer**                          | **Your Actual Types**                                                                                                  | **Responsibilities / Notes**                                                                                                                                                                                                                   |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Model (Application Logic + Domain)** | `StatusService` (in `src/model.service/StatusService.ts`)<br>and domain types (`Status`, `User`) from `tweeter-shared` | Encapsulates access to dummy story data; will later fetch from backend. Handles paging logic, data retrieval, and aggregation.                                                                                                                 |
+| **Presenter**                          | `StoryPresenter` (in `src/presenter/StoryPresenter.ts`)                                                                | Interprets UI events from the Story view (e.g., “get next page”), validates input, manages paging state (`lastStatus`, `hasMorePages`), calls `StatusService.getStoryPage(...)`, then notifies the View.                                       |
+| **View (React UI)**                    | `StoryScroller` / `StatusItemScroller` components and `useMessageList` / `useUserInfo` hooks                           | Displays the list of statuses and loading indicators. Implements the **View Interface** defined by `StoryPresenter.View`. Calls presenter methods like `loadMoreItems()` when user scrolls. Uses observer callback pattern to receive updates. |
+
+### 2. Relationships (Dependency Rule)
+
+* `StoryScroller` → depends on `StoryPresenter` interface only, never on services.
+* `StoryPresenter` → depends on `StatusService` interface (application logic), not the UI.
+* `StatusService` → depends only on domain model (`Status`, `User`), not presenters or views.
+  This satisfies the **dependency inversion** rule: all dependencies flow inward toward core logic.
+
+---
+
+### 3. UML Class Diagram (simplified textual form)
+
+```
++--------------------+          +--------------------+          +-------------------+
+|   StoryScroller    |<>------->|   StoryPresenter   |<>------->|   StatusService   |
+|--------------------|          |--------------------|          |-------------------|
+| - presenter: SP    |          | - service: SS      |          |                   |
+|--------------------|          | - view: StoryView  |          | +getStoryPage()   |
+| +displayStory()    |          |--------------------|          |-------------------|
+| +showMessage()     |          | +loadMoreItems()   |          | returns Status[]  |
+| +setLoading(bool)  |          | +updateView(...)   |          |                   |
++--------------------+          +--------------------+          +-------------------+
+
+<<interface>> StoryView
+  +displayStatuses(statuses: Status[]): void
+  +setLoading(isLoading: boolean): void
+```
+
+* The diamond arrow (`<>`) means “has-a” or “uses” association.
+* `StoryPresenter` implements observer updates through its `StoryView` interface.
+
+---
+
+### 4. UML Sequence Diagram (simplified)
+
+```
+StoryScroller    StoryPresenter     StatusService
+     |                   |                 |
+     |----loadMore()---->|                 |
+     |                   |----getStoryPage(follower)---->|
+     |                   |<----statuses[]----------------|
+     |<--updateView(statuses)--|                 
+     |--displayStatuses()-->|
+```
+
+Shows data flowing one way (View → Presenter → Service) and results propagating back via callback, never the reverse.
+
+---
+
+### 5. Why MVP Works Well Here
+
+1. **Testability** — Logic now lives in presenters (`StoryPresenter`), which are pure TypeScript classes easily tested without rendering React.
+2. **Separation of Concerns** — UI (React), coordination (Presenter), and data (Service) are isolated. Each evolves independently.
+3. **Scalability & Maintainability** — Future backend integration simply swaps the dummy `StatusService` with a real one, no change to UI.
+
+---
+
+## QUESTION 2 — Template Method Pattern (Milestone 2B)
+
+The **template method** refactor was introduced via `PagedItemPresenter.ts`, which became the shared superclass for presenters managing paging behavior (`FeedPresenter`, `FollowerPresenter`, `FolloweePresenter`, `StoryPresenter`).
+
+---
+
+### BEFORE UML (duplication)
+
+Each presenter implemented its own paging logic:
+
+```
++------------------+    +--------------------+    +--------------------+
+| FeedPresenter    |    | FollowerPresenter  |    | FolloweePresenter  |
+|------------------|    |--------------------|    |--------------------|
+| +loadMore()      |    | +loadMore()        |    | +loadMore()        |
+| +setHasMore()    |    | +setHasMore()      |    | +setHasMore()      |
+| +getItems()      |    | +getItems()        |    | +getItems()        |
++------------------+    +--------------------+    +--------------------+
+```
+
+Each contained identical logic to:
+
+* Track `lastItem`
+* Call its service (`StatusService`, `FollowService`)
+* Notify its view
+
+---
+
+### AFTER UML (with Template Method)
+
+```
++------------------------+
+| <<abstract>>           |
+| PagedItemPresenter<T>  |
+|------------------------|
+| - lastItem: T          |
+| - hasMorePages: bool   |
+|------------------------|
+| +loadMoreItems(): void |  <-- TEMPLATE METHOD
+| +notifyView(): void    |
+| #getItemsPage(): T[]   |  <-- abstract hook
++-----------^------------+
+            |
+     +------+------------------------------+
+     |                |                    |
++-----------+   +-----------------+   +-----------------+
+| FeedPresenter | | FollowerPresenter | | FolloweePresenter |
+|---------------| |-----------------| |-----------------|
+| #getItemsPage | | #getItemsPage  | | #getItemsPage  |
+| (override)    | | (override)     | | (override)     |
++---------------+ +----------------+ +----------------+
+```
+
+**Roles:**
+
+* **Superclass (abstract)** = `PagedItemPresenter`
+
+  * Defines `loadMoreItems()` template algorithm:
+
+    1. Check `hasMorePages`
+    2. Call subclass-specific `getItemsPage()`
+    3. Update `lastItem`, `hasMorePages`
+    4. Notify view
+* **Subclasses** (`FeedPresenter`, `FollowerPresenter`, etc.)
+
+  * Implement `getItemsPage()` with their own service call (`StatusService`, `FollowService`).
+  * Contain no duplicated paging logic.
+
+---
+
+### How Duplication Was Removed
+
+* Before: every presenter had ~20–30 lines of identical logic (pagination, loading flags, view updates).
+* After: that logic exists once in `PagedItemPresenter`.
+* Subclasses now define only *what data* to load, not *how* to manage pagination.
+* Result: fewer errors, simpler tests, faster future extension (e.g., adding `LikesPresenter` needs only a single override).
+
+---
+
+## HOW TO DRAW YOUR UML IN PRACTICE
+
+**Tools:**
+
+* Draw.io (diagrams.net) or Lucidchart for polished UML.
+* Or VS Code + PlantUML plugin (`@startuml … @enduml` syntax).
+
+**Steps:**
+
+1. **Class Diagram for Q1**
+
+   * Include `StoryScroller`, `StoryPresenter`, `StatusService`, and `StoryView` interface.
+   * Show dependencies with solid arrows.
+   * Add 2–3 key methods per class only.
+2. **Sequence Diagram for Q1**
+
+   * Objects: `StoryScroller`, `StoryPresenter`, `StatusService`.
+   * Show one user action (“load more”) and data return.
+3. **Class Diagram (Before) for Q2**
+
+   * Show three presenters side-by-side with identical operations.
+4. **Class Diagram (After) for Q2**
+
+   * Show `PagedItemPresenter` superclass and its subclasses.
+   * Use `<<abstract>>` stereotype.
+   * Highlight `loadMoreItems()` (template) and `getItemsPage()` (abstract hook).
+
+---
+
+## Summary Submission Skeleton
+
+Your written answers + diagrams can be structured exactly like this:
+
+**Q1a:** Roles & Layer Relationships — include class and sequence diagrams.
+**Q1b:** Reasons MVP is effective — 2–3 points referencing the diagrams.
+**Q2a:** Template method pattern roles — before/after UML diagrams.
+**Q2b:** Explanation of duplication removal.
+
+If you want, I can render the UML text as proper PlantUML blocks ready for Draw.io import—do you want that next?

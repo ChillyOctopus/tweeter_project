@@ -22,11 +22,12 @@ export class PostStatusPresenter extends Presenter<PostStatusView>{
         this.doFailureReportingOperation(async () => {
             this.view.setIsLoading(true);
             toastId = this.view.displayInfoMessage("Posting status...", 0);
+            this.view.deleteMessage(toastId);
             const newStatus = new Status(post, this.view.getCurrentUser(), Date.now());
             await this.postService.postStatus(this.view.getAuthToken(), newStatus);
             this.view.setPost("");
             this.view.displayInfoMessage("Status posted!", 2000);
-        }, "post the status", toastId);
+        }, "post the status");
     }
     
     protected doFinallyOperations(id?: string): void {

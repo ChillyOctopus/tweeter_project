@@ -18,7 +18,6 @@ import { StoryPresenter } from "./presenter/StoryPresenter";
 import { PagedItemView } from "./presenter/PagedItemPresenter";
 import { Status, User } from "tweeter-shared";
 import { LoginRegisterView } from "./presenter/AccessPresenter";
-import { LoginPresenter } from "./presenter/LoginPresenter";
 import { RegisterPresenter } from "./presenter/RegisterPresenter";
 import UserItem from "./components/userItem/UserItem";
 import ItemScroller from "./components/mainLayout/ItemScroller";
@@ -68,9 +67,9 @@ const UnauthenticatedRoutes = () => {
 
   return (
     <Routes>
-      <Route path="/login" element={<Login uuid={`login-${location.hash}`} presenterFactory={(view: LoginRegisterView) => new LoginPresenter(view)} />} />
-      <Route path="/register" element={<Register uuid={`register-${location.hash}`} presenterFactory={(view: LoginRegisterView) => new RegisterPresenter(view)} />} />
-      <Route path="*" element={<Login uuid={`login-${location.hash}`} presenterFactory={(view: LoginRegisterView) => new LoginPresenter(view)} />} />
+      <Route path="/login" element={<Login uuid={`login-${location.hash}`} key={`login-${location.hash}`} />} />
+      <Route path="/register" element={<Register uuid={`register-${location.hash}`} key={`register-${location.hash}`} presenterFactory={(view: LoginRegisterView) => new RegisterPresenter(view)} />} />
+      <Route path="*" element={<Login uuid={`login-${location.hash}`} key={`login-${location.hash}`} />} />
     </Routes>
   );
 };

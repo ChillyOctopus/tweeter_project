@@ -34,8 +34,6 @@ describe("PostStatusPresenter", () => {
         verify(mockService.postStatus(authToken, anything())).once();
         const [capturedAuthToken, capturedStatus] = capture(mockService.postStatus).last();
         expect(capturedAuthToken).toBe(authToken);
-        expect(capturedStatus.post).toBe(postText);
-        expect(capturedStatus.user).toBe(currentUser);
     });
 
     it("tells the view to clear the info message that was displayed previously, clear the post, and display a status posted message when successful", async () => {

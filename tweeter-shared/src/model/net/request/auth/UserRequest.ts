@@ -1,4 +1,4 @@
-import { TweeterRequest } from "../../../../../dist";
+import { TweeterRequest } from "../TweeterRequest";
 import { AuthTokenDto } from "../../../dto/AuthTokenDto";
 
 export interface UserRequest extends TweeterRequest{

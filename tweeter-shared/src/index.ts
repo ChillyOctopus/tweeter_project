@@ -39,7 +39,3 @@ export type { GetCountsResponse } from "./model/net/response/follow/GetCountsRes
 export type { PagedUserItemResponse } from "./model/net/response/follow/PagedUserItemResponse";
 
 export type { PagedStatusItemResponse } from "./model/net/response/post/PagedStatusItemResponse";
-
-// Network
-// export { ClientCommunicator } from "./model/net/ClientCommunicator";
-// export { ServerFacade } from "./model/net/ServerFacade";

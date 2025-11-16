@@ -1,11 +1,21 @@
 import { UserService } from "../../model/service/UserService";
-import { AToBRequest } from "tweeter-shared";
+import { AToBRequest, DoesAFollowBResponse } from "tweeter-shared";
 
-export const handler = async (request: AToBRequest): Promise<boolean> => {
+export const handler = async (request: AToBRequest): Promise<DoesAFollowBResponse> => {
     const userService = new UserService();
     const userA = await userService.getUser(request.token, request.userAliasA);
     const userB = await userService.getUser(request.token, request.userAliasB);
-    if (!userA || !userB) return false;
+    if (!userA || !userB){
+        return {
+            success: false,
+            message: "User not found",
+            isFollower: false
+        };
+    }
     let isFollower = await userService.getIsFollowerStatus(request.token, userA, userB);
-    return isFollower;
+    return {
+        success: true, 
+        message: null, 
+        isFollower: isFollower 
+    };
 }

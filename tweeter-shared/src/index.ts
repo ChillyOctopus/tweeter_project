@@ -35,6 +35,7 @@ export type { TweeterResponse } from "./model/net/response/TweeterResponse";
 export type { LoginResponse } from "./model/net/response/auth/LoginResponse";
 export type { UserResponse } from "./model/net/response/auth/UserResponse";
 
+export type { DoesAFollowBResponse } from "./model/net/response/follow/DoesAFollowBResponse";
 export type { GetCountsResponse } from "./model/net/response/follow/GetCountsResponse";
 export type { PagedUserItemResponse } from "./model/net/response/follow/PagedUserItemResponse";
 

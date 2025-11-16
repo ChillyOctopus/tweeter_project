@@ -4,7 +4,7 @@ import { ServerFacade } from "../network/ServerFacade";
 export class PostService {
   async postStatus(authToken: AuthToken, status: Status): Promise<void> {
     const request: PostStatusRequest = {
-      authToken: authToken.dto,
+      token: authToken.dto,
       status: status.dto
     }
     await ServerFacade.instance.postStatus(request);

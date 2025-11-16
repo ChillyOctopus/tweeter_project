@@ -28,7 +28,7 @@ export class StatusService {
     fetchStory: boolean
   ): Promise<[Status[], boolean]> {
     const request: PagedStatusItemRequest = {
-      authToken: authToken.dto,
+      token: authToken.dto,
       userAlias: userAlias,
       pageSize: pageSize,
       lastItem: lastItem ? lastItem.dto : null

@@ -66,11 +66,11 @@ export class ServerFacade {
     const response = await this.clientCommunicator.doPost<
       UserRequest,
       UserResponse
-    >(request, "/user/get");
+    >(request, "/auth/user");
 
     if (response.success) {
       if (response.user) {
-        return response
+        return response.user ? User.fromDto(response.user) : null;
       } else {
         return null;
       }
@@ -85,38 +85,21 @@ export class ServerFacade {
   ): Promise<boolean> {
     const response = await this.clientCommunicator.doPost<
       AToBRequest,
-      TweeterResponse
+      DoesAFollowBResponse
     >(request, "/follow/doesAFollowB");
 
-    if (response.success) {
-      return response.message === "true";
-    } else {
+    if (!response.success) {
       console.error(response);
       throw new Error(response.message ?? undefined);
     }
+    return response.isFollower;
   }
 
   public async getFollowerCount(
     request: GetCountsRequest
   ): Promise<number> {
     const response = await this.clientCommunicator.doPost<
-      PagedUserItemRequest,
-      GetCountsResponse
-    >(request, "/follow/getCounts");
-
-    if (response.success) {
-      return parseInt(response.followers);
-    } else {
-      console.error(response);
-      throw new Error(response.message ?? undefined);
-    }
-  }
-
-  public async getFolloweeCount(
-    request: GetCountsRequest
-  ): Promise<number> {
-    const response = await this.clientCommunicator.doPost<
-      PagedUserItemRequest,
+      GetCountsRequest,
       GetCountsResponse
     >(request, "/follow/getCounts");
 
@@ -124,14 +107,29 @@ export class ServerFacade {
       console.error(response);
       throw new Error(response.message ?? undefined);
     }
-    return parseInt(response.followees);
+    return response.followers;
+  }
+
+  public async getFolloweeCount(
+    request: GetCountsRequest
+  ): Promise<number> {
+    const response = await this.clientCommunicator.doPost<
+      GetCountsRequest,
+      GetCountsResponse
+    >(request, "/follow/getCounts");
+
+    if (!response.success) {
+      console.error(response);
+      throw new Error(response.message ?? undefined);
+    }
+    return response.followees;
   }
 
   public async follow(
     request: AToBRequest
   ): Promise<boolean> {
     const response = await this.clientCommunicator.doPost<
-      PagedUserItemRequest,
+      AToBRequest,
       GetCountsResponse
     >(request, "/follow/setAFollowB");
 
@@ -146,7 +144,7 @@ export class ServerFacade {
     request: AToBRequest
   ): Promise<boolean> {
     const response = await this.clientCommunicator.doPost<
-      PagedUserItemRequest,
+      AToBRequest,
       GetCountsResponse
     >(request, "/follow/setAUnfollowB");
 
@@ -161,8 +159,8 @@ export class ServerFacade {
     request: PagedStatusItemRequest
   ): Promise<PagedStatusItemResponse> {
     const response = await this.clientCommunicator.doPost<
-      PagedUserItemRequest,
-      any
+      PagedStatusItemRequest,
+      PagedStatusItemResponse
     >(request, "/post/getStatus");
     if (!response.success) {
       console.error(response);
@@ -175,8 +173,8 @@ export class ServerFacade {
     request: PagedStatusItemRequest
   ): Promise<PagedStatusItemResponse> {
     const response = await this.clientCommunicator.doPost<
-      PagedUserItemRequest,
-      any
+      PagedStatusItemRequest,
+      PagedStatusItemResponse
     >(request, "/post/getPosts");
     if (!response.success) {
       console.error(response);

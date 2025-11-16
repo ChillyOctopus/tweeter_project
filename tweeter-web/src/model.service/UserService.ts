@@ -1,4 +1,4 @@
-import { AuthToken, User, UserRequest, AToBRequest, PagedUserItemRequest } from "tweeter-shared";
+import { AuthToken, User, UserRequest, AToBRequest, PagedUserItemRequest, GetCountsRequest } from "tweeter-shared";
 import { ServerFacade } from "../network/ServerFacade";
 
 export class UserService {
@@ -21,21 +21,17 @@ export class UserService {
     }
 
     public async getFollowerCount(authToken: AuthToken, user: User): Promise<number> {
-        const request: PagedUserItemRequest = {
+        const request: GetCountsRequest = {
             token: authToken.dto,
-            userAlias: user.alias,
-            pageSize: 0,
-            lastItem: null
+            user: user.dto
         };
         return ServerFacade.instance.getFollowerCount(request);
     }
 
     public async getFolloweeCount(authToken: AuthToken, user: User): Promise<number> {
-        const request: PagedUserItemRequest = {
+        const request: GetCountsRequest = {
             token: authToken.dto,
-            userAlias: user.alias,
-            pageSize: 0,
-            lastItem: null
+            user: user.dto
         };
         return ServerFacade.instance.getFolloweeCount(request);
     }
@@ -43,6 +39,7 @@ export class UserService {
     public async follow(authToken: AuthToken, userToFollow: User): Promise<void> {
         const request: AToBRequest = {
             token: authToken.dto,
+            userAliasA: "", // We determine user A from the auth token on the server side
             userAliasB: userToFollow.alias
         };
         await ServerFacade.instance.follow(request);
@@ -51,6 +48,7 @@ export class UserService {
     public async unfollow(authToken: AuthToken, userToUnfollow: User): Promise<void> {
         const request: AToBRequest = {
             token: authToken.dto,
+            userAliasA: "", // We determine user A from the auth token on the server side
             userAliasB: userToUnfollow.alias
         };
         await ServerFacade.instance.unfollow(request);

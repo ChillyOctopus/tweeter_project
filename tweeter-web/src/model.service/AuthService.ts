@@ -36,11 +36,13 @@ export class AuthService {
   ): Promise<[User, AuthToken]> {
 
     let request;
+    let response;
     if (isLogin) {
       request = {
         userAlias: alias,
         userPassword: password
       };
+      response = await ServerFacade.instance.login(request);
     } else {
       request = {
         firstName: firstName!,
@@ -50,18 +52,15 @@ export class AuthService {
         imageBytes: imageBytes!,
         imageFileExtension: imageFileExtension!
       };
+      response = await ServerFacade.instance.register(request);
     }
 
-    const response = isLogin
-      ? await ServerFacade.instance.login(request)
-      : await ServerFacade.instance.register(request);
-
-    return [User.fromDto(response.user)!, AuthToken.fromDto(response.authToken)!];
+    return [User.fromDto(response.user)!, AuthToken.fromDto(response.token)!];
   }
 
   async logout(authToken: AuthToken): Promise<void> {
     const request: LogoutRequest = {
-      authToken: authToken.dto
+      token: authToken.dto
     }
     await ServerFacade.instance.logout(request);
   }

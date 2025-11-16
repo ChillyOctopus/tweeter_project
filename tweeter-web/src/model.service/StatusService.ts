@@ -1,4 +1,5 @@
-import { AuthToken, Status, FakeData, User } from "tweeter-shared";
+import { AuthToken, Status, PagedStatusItemRequest } from "tweeter-shared";
+import { ServerFacade } from "../network/ServerFacade";
 
 export class StatusService {
   public async loadMoreFeed(
@@ -26,6 +27,18 @@ export class StatusService {
     lastItem: Status | null,
     fetchStory: boolean
   ): Promise<[Status[], boolean]> {
-    return FakeData.instance.getPageOfStatuses(lastItem, pageSize);
+    const request: PagedStatusItemRequest = {
+      authToken: authToken.dto,
+      userAlias: userAlias,
+      pageSize: pageSize,
+      lastItem: lastItem ? lastItem.dto : null
+    }
+
+    let response = (fetchStory) ? await ServerFacade.instance.getStory(request) : await ServerFacade.instance.getFeed(request);
+    if (!response.items) {
+      return [[], response.hasMore];
+    }
+
+    return [response.items.map(i => Status.fromDto(i)).filter((s): s is Status => s !== null), response.hasMore];
   }
 }

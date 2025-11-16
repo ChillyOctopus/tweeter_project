@@ -133,7 +133,7 @@ Resources:
                 responses: *commonAmazonResponses
               responses: *commonSwaggerResponses
 
-          /1:
+          /auth/login:
             post:
               consumes: *commonConsumes
               produces: *commonProduces
@@ -141,12 +141,12 @@ Resources:
                 type: aws
                 httpMethod: POST
                 uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambda1.Arn}/invocations
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${loginFunction.Arn}/invocations
                 requestTemplates: *commonRequestTemplates
                 responses: *commonAmazonResponses
               responses: *commonSwaggerResponses
 
-          /2:
+          /auth/logout:
             post:
               consumes: *commonConsumes
               produces: *commonProduces
@@ -154,12 +154,12 @@ Resources:
                 type: aws
                 httpMethod: POST
                 uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambda2.Arn}/invocations
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${logoutFunction.Arn}/invocations
                 requestTemplates: *commonRequestTemplates
                 responses: *commonAmazonResponses
               responses: *commonSwaggerResponses
 
-          /3:
+          /auth/register:
             post:
               consumes: *commonConsumes
               produces: *commonProduces
@@ -167,12 +167,12 @@ Resources:
                 type: aws
                 httpMethod: POST
                 uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambda3.Arn}/invocations
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${registerFunction.Arn}/invocations
                 requestTemplates: *commonRequestTemplates
                 responses: *commonAmazonResponses
               responses: *commonSwaggerResponses
 
-          /4:
+          /auth/user:
             post:
               consumes: *commonConsumes
               produces: *commonProduces
@@ -180,12 +180,12 @@ Resources:
                 type: aws
                 httpMethod: POST
                 uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambda4.Arn}/invocations
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${userFunction.Arn}/invocations
                 requestTemplates: *commonRequestTemplates
                 responses: *commonAmazonResponses
               responses: *commonSwaggerResponses
 
-          /5:
+          /follow/doesAFollowB:
             post:
               consumes: *commonConsumes
               produces: *commonProduces
@@ -193,12 +193,12 @@ Resources:
                 type: aws
                 httpMethod: POST
                 uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambda5.Arn}/invocations
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${doesAFollowBFunction.Arn}/invocations
                 requestTemplates: *commonRequestTemplates
                 responses: *commonAmazonResponses
               responses: *commonSwaggerResponses
 
-          /6:
+          /follow/getCounts:
             post:
               consumes: *commonConsumes
               produces: *commonProduces
@@ -206,12 +206,12 @@ Resources:
                 type: aws
                 httpMethod: POST
                 uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambda6.Arn}/invocations
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getCountsFunction.Arn}/invocations
                 requestTemplates: *commonRequestTemplates
                 responses: *commonAmazonResponses
               responses: *commonSwaggerResponses
 
-          /7:
+          /follow/getFollowees:
             post:
               consumes: *commonConsumes
               produces: *commonProduces
@@ -219,12 +219,12 @@ Resources:
                 type: aws
                 httpMethod: POST
                 uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambda7.Arn}/invocations
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getFolloweesFunction.Arn}/invocations
                 requestTemplates: *commonRequestTemplates
                 responses: *commonAmazonResponses
               responses: *commonSwaggerResponses
 
-          /8:
+          /follow/getFollowers:
             post:
               consumes: *commonConsumes
               produces: *commonProduces
@@ -232,12 +232,12 @@ Resources:
                 type: aws
                 httpMethod: POST
                 uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambda8.Arn}/invocations
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getFollowersFunction.Arn}/invocations
                 requestTemplates: *commonRequestTemplates
                 responses: *commonAmazonResponses
               responses: *commonSwaggerResponses
 
-          /9:
+          /follow/setAFollowB:
             post:
               consumes: *commonConsumes
               produces: *commonProduces
@@ -245,12 +245,12 @@ Resources:
                 type: aws
                 httpMethod: POST
                 uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambda9.Arn}/invocations
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${setAFollowBFunction.Arn}/invocations
                 requestTemplates: *commonRequestTemplates
                 responses: *commonAmazonResponses
               responses: *commonSwaggerResponses
 
-          /10:
+          /follow/setAUnfollowB:
             post:
               consumes: *commonConsumes
               produces: *commonProduces
@@ -258,12 +258,12 @@ Resources:
                 type: aws
                 httpMethod: POST
                 uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambda10.Arn}/invocations
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${setAUnfollowBFunction.Arn}/invocations
                 requestTemplates: *commonRequestTemplates
                 responses: *commonAmazonResponses
               responses: *commonSwaggerResponses
 
-          /11:
+          /post/getPosts:
             post:
               consumes: *commonConsumes
               produces: *commonProduces
@@ -271,12 +271,12 @@ Resources:
                 type: aws
                 httpMethod: POST
                 uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambda11.Arn}/invocations
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getPostsFunction.Arn}/invocations
                 requestTemplates: *commonRequestTemplates
                 responses: *commonAmazonResponses
               responses: *commonSwaggerResponses
 
-          /12:
+          /post/getStatus:
             post:
               consumes: *commonConsumes
               produces: *commonProduces
@@ -284,12 +284,12 @@ Resources:
                 type: aws
                 httpMethod: POST
                 uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambda12.Arn}/invocations
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getStatusFunction.Arn}/invocations
                 requestTemplates: *commonRequestTemplates
                 responses: *commonAmazonResponses
               responses: *commonSwaggerResponses
 
-          /13:
+          /post/postPost:
             post:
               consumes: *commonConsumes
               produces: *commonProduces
@@ -297,12 +297,12 @@ Resources:
                 type: aws
                 httpMethod: POST
                 uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambda13.Arn}/invocations
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${postPostFunction.Arn}/invocations
                 requestTemplates: *commonRequestTemplates
                 responses: *commonAmazonResponses
               responses: *commonSwaggerResponses
 
-          /14:
+          /post/postStatus:
             post:
               consumes: *commonConsumes
               produces: *commonProduces
@@ -310,7 +310,7 @@ Resources:
                 type: aws
                 httpMethod: POST
                 uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambda14.Arn}/invocations
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${postStatusFunction.Arn}/invocations
                 requestTemplates: *commonRequestTemplates
                 responses: *commonAmazonResponses
               responses: *commonSwaggerResponses
@@ -381,200 +381,200 @@ Resources:
             Path: /learning/echo
             Method: POST
 
-  lambda1:
+  loginFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: lambda1
-      Handler: lambda/learning/EchoLambda.handler
+      FunctionName: loginFunction
+      Handler: lambda/auth/LoginLambda.handler
       Policies: *commonPolicies
       Events:
         PostApi:
           Type: Api
           Properties:
             RestApiId: !Ref tweeterApi
-            Path: /1
+            Path: /auth/login
             Method: POST
 
-  lambda2:
+  logoutFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: lambda2
-      Handler: lambda/learning/EchoLambda.handler
+      FunctionName: logoutFunction
+      Handler: lambda/auth/LogoutLambda.handler
       Policies: *commonPolicies
       Events:
         PostApi:
           Type: Api
           Properties:
             RestApiId: !Ref tweeterApi
-            Path: /2
+            Path: /auth/logout
             Method: POST
 
-  lambda3:
+  registerFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: lambda3
-      Handler: lambda/learning/EchoLambda.handler
+      FunctionName: registerFunction
+      Handler: lambda/auth/RegisterLambda.handler
       Policies: *commonPolicies
       Events:
         PostApi:
           Type: Api
           Properties:
             RestApiId: !Ref tweeterApi
-            Path: /3
+            Path: /auth/register
             Method: POST
 
-  lambda4:
+  userFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: lambda4
-      Handler: lambda/learning/EchoLambda.handler
+      FunctionName: userFunction
+      Handler: lambda/auth/UserLambda.handler
       Policies: *commonPolicies
       Events:
         PostApi:
           Type: Api
           Properties:
             RestApiId: !Ref tweeterApi
-            Path: /4
+            Path: /auth/user
             Method: POST
 
-  lambda5:
+  doesAFollowBFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: lambda5
-      Handler: lambda/learning/EchoLambda.handler
+      FunctionName: doesAFollowBFunction
+      Handler: lambda/follow/DoesAFollowBLambda.handler
       Policies: *commonPolicies
       Events:
         PostApi:
           Type: Api
           Properties:
             RestApiId: !Ref tweeterApi
-            Path: /5
+            Path: /follow/doesAFollowB
             Method: POST
 
-  lambda6:
+  getCountsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: lambda6
-      Handler: lambda/learning/EchoLambda.handler
+      FunctionName: getCountsFunction
+      Handler: lambda/follow/GetCountsLambda.handler
       Policies: *commonPolicies
       Events:
         PostApi:
           Type: Api
           Properties:
             RestApiId: !Ref tweeterApi
-            Path: /6
+            Path: /follow/getCounts
             Method: POST
 
-  lambda7:
+  getFolloweesFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: lambda7
-      Handler: lambda/learning/EchoLambda.handler
+      FunctionName: getFolloweesFunction
+      Handler: lambda/follow/GetFolloweesLambda.handler
       Policies: *commonPolicies
       Events:
         PostApi:
           Type: Api
           Properties:
             RestApiId: !Ref tweeterApi
-            Path: /7
+            Path: /follow/getFollowees
             Method: POST
 
-  lambda8:
+  getFollowersFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: lambda8
-      Handler: lambda/learning/EchoLambda.handler
+      FunctionName: getFollowersFunction
+      Handler: lambda/follow/GetFollowersLambda.handler
       Policies: *commonPolicies
       Events:
         PostApi:
           Type: Api
           Properties:
             RestApiId: !Ref tweeterApi
-            Path: /8
+            Path: /follow/getFollowers
             Method: POST
 
-  lambda9:
+  setAFollowBFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: lambda9
-      Handler: lambda/learning/EchoLambda.handler
+      FunctionName: setAFollowBFunction
+      Handler: lambda/follow/SetAFollowBLambda.handler
       Policies: *commonPolicies
       Events:
         PostApi:
           Type: Api
           Properties:
             RestApiId: !Ref tweeterApi
-            Path: /9
+            Path: /follow/setAFollowB
             Method: POST
 
-  lambda10:
+  setAUnfollowBFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: lambda10
-      Handler: lambda/learning/EchoLambda.handler
+      FunctionName: setAUnfollowBFunction
+      Handler: lambda/follow/SetAUnfollowBFollow.handler
       Policies: *commonPolicies
       Events:
         PostApi:
           Type: Api
           Properties:
             RestApiId: !Ref tweeterApi
-            Path: /10
+            Path: /follow/setAUnfollowB
             Method: POST
 
-  lambda11:
+  getPostsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: lambda11
-      Handler: lambda/learning/EchoLambda.handler
+      FunctionName: getPostsFunction
+      Handler: lambda/post/GetPostsLambda.handler
       Policies: *commonPolicies
       Events:
         PostApi:
           Type: Api
           Properties:
             RestApiId: !Ref tweeterApi
-            Path: /11
+            Path: /post/getPosts
             Method: POST
 
-  lambda12:
+  getStatusFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: lambda12
-      Handler: lambda/learning/EchoLambda.handler
+      FunctionName: getStatusFunction
+      Handler: lambda/post/GetStatusLambda.handler
       Policies: *commonPolicies
       Events:
         PostApi:
           Type: Api
           Properties:
             RestApiId: !Ref tweeterApi
-            Path: /12
+            Path: /post/getStatus
             Method: POST
 
-  lambda13:
+  postPostFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: lambda13
-      Handler: lambda/learning/EchoLambda.handler
+      FunctionName: postPostFunction
+      Handler: lambda/post/PostPostLambda.handler
       Policies: *commonPolicies
       Events:
         PostApi:
           Type: Api
           Properties:
             RestApiId: !Ref tweeterApi
-            Path: /13
+            Path: /post/postPost
             Method: POST
 
-  lambda14:
+  postStatusFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: lambda14
-      Handler: lambda/learning/EchoLambda.handler
+      FunctionName: postStatusFunction
+      Handler: lambda/post/PostStatusLambda.handler
       Policies: *commonPolicies
       Events:
         PostApi:
           Type: Api
           Properties:
             RestApiId: !Ref tweeterApi
-            Path: /14
+            Path: /post/postStatus
             Method: POST
   #
   # TODO: ADD MORE WEB API LAMBDA DEFINITIONS HERE

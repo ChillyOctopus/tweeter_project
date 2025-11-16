@@ -8,6 +8,6 @@ export const handler = async (request: UserRequest): Promise<UserResponse> => {
     return {
         success: true,
         message: null,
-        user: user?.dto || null
+        user: user || null
     }
 }

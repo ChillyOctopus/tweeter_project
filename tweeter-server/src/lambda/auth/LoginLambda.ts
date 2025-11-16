@@ -7,7 +7,7 @@ export const handler = async (request: LoginRequest): Promise<LoginResponse> => 
     return {
         success: true,
         message: null,
-        user: user.dto,
+        user: user,
         token: token
     }
 }

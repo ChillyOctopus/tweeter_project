@@ -12,7 +12,9 @@ export const handler = async (event: RegisterRequest): Promise<LoginResponse> =>
         event.imageFileExtension
     );
     return {
-        token: authToken.token,
-        userAlias: user.alias
+        success: true,
+        message: null,
+        user: user,
+        token: authToken,
     };
 }

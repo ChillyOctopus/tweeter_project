@@ -7,6 +7,6 @@ architecture = "x86_64"
 handler = "src/lambda/learning/PingLambda.handler"
 manifest_hash = ""
 packagetype = "Zip"
-functions = ["pingFunction", "echoFunction"]
+functions = ["pingFunction", "echoFunction", "loginFunction", "logoutFunction", "registerFunction", "userFunction", "doesAFollowBFunction", "getCountsFunction", "getFolloweesFunction", "getFollowersFunction", "setAFollowBFunction", "setAUnfollowBFunction", "getPostsFunction", "getStatusFunction", "postPostFunction", "postStatusFunction"]
 
 [layer_build_definitions]

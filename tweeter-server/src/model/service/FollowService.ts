@@ -1,8 +1,8 @@
-import { AuthToken, UserDto, User, FakeData } from "tweeter-shared";
+import { AuthToken, UserDto, User, FakeData, AuthTokenDto } from "tweeter-shared";
 
 export class FollowService {
   public async loadMoreFollowees (
-    token: string,
+    token: AuthTokenDto,
     userAlias: string,
     pageSize: number,
     lastItem: UserDto | null
@@ -11,7 +11,7 @@ export class FollowService {
   };
     
   public async loadMoreFollowers (
-    token: string,
+    token: AuthTokenDto,
     userAlias: string,
     pageSize: number,
     lastItem: UserDto | null
@@ -20,7 +20,7 @@ export class FollowService {
   };
 
   private async loadMoreFollowersOrFollowees (
-    token: string,
+    token: AuthTokenDto,
     userAlias: string,
     pageSize: number,
     lastItem: UserDto | null,

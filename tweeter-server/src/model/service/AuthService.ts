@@ -1,4 +1,4 @@
-import { AuthToken, FakeData, User } from "tweeter-shared";
+import { AuthToken, AuthTokenDto, FakeData, User, UserDto } from "tweeter-shared";
 
 export class AuthService {
   async register(
@@ -8,7 +8,7 @@ export class AuthService {
     password: string,
     imageBytes: Uint8Array,
     imageFileExtension: string
-  ): Promise<[User, AuthToken]> {
+  ): Promise<[UserDto, AuthTokenDto]> {
     return this.loginOrRegister(
       alias,
       password,
@@ -20,7 +20,7 @@ export class AuthService {
     );
   }
 
-  async login(alias: string, password: string): Promise<[User, AuthToken]> {
+  async login(alias: string, password: string): Promise<[UserDto, AuthTokenDto]> {
     return this.loginOrRegister(alias, password, true);
   }
 
@@ -32,13 +32,15 @@ export class AuthService {
     lastName?: string,
     imageBytes?: Uint8Array,
     imageFileExtension?: string
-  ): Promise<[User, AuthToken]> {
-    const user = FakeData.instance.firstUser;
+  ): Promise<[UserDto, AuthTokenDto]> {
+    const userObj = FakeData.instance.firstUser;
+    const authtokenObj = FakeData.instance.authToken;;
+    const user = userObj?.dto || null;
     if (!user) throw new Error("Invalid registration");
-    return [user, FakeData.instance.authToken];
+    return [user, authtokenObj.dto];
   }
 
-  async logout(authToken: AuthToken): Promise<void> {
+  async logout(authToken: AuthTokenDto): Promise<void> {
     await new Promise((res) => setTimeout(res, 1000));
   }
   

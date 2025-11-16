@@ -1,7 +1,12 @@
-import { AuthToken, Status } from "tweeter-shared";
+import { AuthToken, PostStatusRequest, Status } from "tweeter-shared";
+import { ServerFacade } from "../network/ServerFacade";
 
 export class PostService {
   async postStatus(authToken: AuthToken, status: Status): Promise<void> {
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    const request: PostStatusRequest = {
+      authToken: authToken.dto,
+      status: status.dto
+    }
+    await ServerFacade.instance.postStatus(request);
   }
 }

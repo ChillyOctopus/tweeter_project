@@ -1,4 +1,5 @@
-import { AuthToken, FakeData, User } from "tweeter-shared";
+import { AuthToken, LogoutRequest, User } from "tweeter-shared";
+import { ServerFacade } from "../network/ServerFacade";
 
 export class AuthService {
   async register(
@@ -33,13 +34,36 @@ export class AuthService {
     imageBytes?: Uint8Array,
     imageFileExtension?: string
   ): Promise<[User, AuthToken]> {
-    const user = FakeData.instance.firstUser;
-    if (!user) throw new Error("Invalid registration");
-    return [user, FakeData.instance.authToken];
+
+    let request;
+    if (isLogin) {
+      request = {
+        userAlias: alias,
+        userPassword: password
+      };
+    } else {
+      request = {
+        firstName: firstName!,
+        lastName: lastName!,
+        alias: alias,
+        password: password,
+        imageBytes: imageBytes!,
+        imageFileExtension: imageFileExtension!
+      };
+    }
+
+    const response = isLogin
+      ? await ServerFacade.instance.login(request)
+      : await ServerFacade.instance.register(request);
+
+    return [User.fromDto(response.user)!, AuthToken.fromDto(response.authToken)!];
   }
 
   async logout(authToken: AuthToken): Promise<void> {
-    await new Promise((res) => setTimeout(res, 1000));
+    const request: LogoutRequest = {
+      authToken: authToken.dto
+    }
+    await ServerFacade.instance.logout(request);
   }
   
 }

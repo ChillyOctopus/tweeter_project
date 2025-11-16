@@ -511,7 +511,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: setAUnfollowBFunction
-      Handler: lambda/follow/SetAUnfollowBFollow.handler
+      Handler: lambda/follow/SetAUnfollowBLambda.handler
       Policies: *commonPolicies
       Events:
         PostApi:

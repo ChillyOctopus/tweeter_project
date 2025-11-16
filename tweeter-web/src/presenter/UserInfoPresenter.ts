@@ -30,9 +30,9 @@ export class UserInfoPresenter extends Presenter<UserInfoView> {
             this.view.setIsLoading(true);
             messageId = this.view.displayInfoMessage(`${follow ? "Following " : "Unfollowing "} ${user.name}...`, 0);
             follow ? await this.userService.follow(authToken, user) : await this.userService.unfollow(authToken, user);
-
+            this.view.deleteMessage(messageId);
             this.setCounts(follow, authToken, user);
-        }, follow ? "follow user" : "unfollow user", messageId);
+        }, follow ? "follow user" : "unfollow user");
     }
 
     private async setCounts(isFollower: boolean, authToken: AuthToken, user: User) {  
@@ -43,7 +43,6 @@ export class UserInfoPresenter extends Presenter<UserInfoView> {
     }
     
     protected doFinallyOperations(id?: string): void {
-        if (id != null) this.view.deleteMessage(id);
         this.view.setIsLoading(false);
     }
 }

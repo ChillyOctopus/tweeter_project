@@ -1,6 +1,7 @@
 import {
   AToBRequest,
   AuthToken,
+  DoesAFollowBResponse,
   EchoRequest,
   GetCountsRequest,
   GetCountsResponse,

@@ -7,7 +7,7 @@ echo "##########################################################################
 cd ~/jacob/byu/340/tweeter-web-starter/tweeter-shared/ && npm run build
 
 # Install the freshly built shared package into the server, build the server, then copy node_modules into the layer
-cd ~/jacob/byu/340/tweeter-web-starter/tweeter-server/ && npm install ../tweeter-shared && npm run build && rm -rf layer/nodejs && mkdir -p layer/nodejs && cp -aL node_modules layer/nodejs && sam build && sam deploy
+cd ~/jacob/byu/340/tweeter-web-starter/tweeter-server/ && npm install ../tweeter-shared && rm -rf layer/nodejs && mkdir -p layer/nodejs && cp -aL node_modules layer/nodejs && npm run build && sam build && sam deploy
 
 # Build the web client and start it
-cd ~/jacob/byu/340/tweeter-web-starter/tweeter-web/ && npm run build && npm start
+cd ~/jacob/byu/340/tweeter-web-starter/tweeter-web/ && npm install ../tweeter-shared && npm run build && npm start

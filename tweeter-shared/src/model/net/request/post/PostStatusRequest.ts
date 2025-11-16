@@ -1,4 +1,4 @@
-import { TweeterRequest } from "../../../../../dist";
+import { TweeterRequest } from "../TweeterRequest";
 import { AuthTokenDto } from "../../../dto/AuthTokenDto";
 import { StatusDto } from "../../../dto/StatusDto";
 

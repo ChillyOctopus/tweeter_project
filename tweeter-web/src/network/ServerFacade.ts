@@ -7,6 +7,7 @@ import {
   LoginRequest,
   LoginResponse,
   LogoutRequest,
+  PagedStatusItemRequest,
   PagedStatusItemResponse,
   PagedUserItemRequest,
   PagedUserItemResponse,
@@ -157,7 +158,7 @@ export class ServerFacade {
   }
 
   public async getStory(
-    request: PagedStatusItemResponse
+    request: PagedStatusItemRequest
   ): Promise<PagedStatusItemResponse> {
     const response = await this.clientCommunicator.doPost<
       PagedUserItemRequest,
@@ -171,7 +172,7 @@ export class ServerFacade {
   }
 
   public async getFeed(
-    request: PagedStatusItemResponse
+    request: PagedStatusItemRequest
   ): Promise<PagedStatusItemResponse> {
     const response = await this.clientCommunicator.doPost<
       PagedUserItemRequest,
@@ -200,7 +201,7 @@ export class ServerFacade {
 
   public async getMoreFollowees(
     request: PagedUserItemRequest
-  ): Promise<PagedStatusItemResponse> {
+  ): Promise<PagedUserItemResponse> {
     const response = await this.clientCommunicator.doPost<
       PagedUserItemRequest,
       PagedUserItemResponse
@@ -216,7 +217,7 @@ export class ServerFacade {
 
   public async getMoreFollowers(
     request: PagedUserItemRequest
-  ): Promise<PagedStatusItemResponse> {
+  ): Promise<PagedUserItemResponse> {
     const response = await this.clientCommunicator.doPost<
       PagedUserItemRequest,
       PagedUserItemResponse

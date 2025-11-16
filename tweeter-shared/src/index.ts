@@ -11,13 +11,13 @@ export type { UserDto } from "./model/dto/UserDto";
 
 // Requests
 export type { TweeterRequest } from "./model/net/request/TweeterRequest";
-export type { PagedUserItemRequest } from "./model/net/request/PagedUserItemRequest";
-export type { EchoRequest } from "./model/net/request/EchoRequest";
-export type { PingRequest } from "./model/net/request/PingRequest";
+export type { PagedUserItemRequest } from "./model/net/request/follow/PagedUserItemRequest";
+export type { EchoRequest } from "./model/net/request/learning/EchoRequest";
+export type { PingRequest } from "./model/net/request/learning/PingRequest";
 
 // Responses
 export type { TweeterResponse } from "./model/net/response/TweeterResponse";
-export type { PagedUserItemResponse } from "./model/net/response/PagedUserItemResponse";
+export type { PagedUserItemResponse } from "./model/net/response/follow/PagedUserItemResponse";
 
 // Network
 // export { ClientCommunicator } from "./model/net/ClientCommunicator";

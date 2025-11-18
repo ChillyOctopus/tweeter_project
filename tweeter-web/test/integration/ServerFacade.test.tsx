@@ -1,32 +1,30 @@
 import "@testing-library/jest-dom";
-import { instance, mock, when, verify, anyNumber, anyOfClass, anything } from "@typestrong/ts-mockito";
+import { anyNumber, anyOfClass, anything } from "@typestrong/ts-mockito";
 import { User, AuthToken } from "tweeter-shared";
 import { ServerFacade } from "../../src/network/ServerFacade";
-
-jest.mock("../../src/network/ServerFacade");
+import "isomorphic-fetch";
 
 describe("Server Facade", () => {
-  const mockUser = new User("First", "Last", "@alias", "imageUrl");
+  const mockUser = new User("Allen", "Anderson", "@allen", "https://faculty.cs.byu.edu/~jwilkerson/cs340/tweeter/images/donald_duck.png");
   const mockToken = new AuthToken("mockTokenValue", Date.now());
-  const mockServerFacade = mock<ServerFacade>();
+  let serverFacade: ServerFacade;
 
   beforeAll(() => {
-
+    serverFacade = new ServerFacade();
   });
 
   it("registers a new user", async () => {
     const regReq = {
-        firstName: mockUser.firstName,
-        lastName: mockUser.lastName,
-        alias: mockUser.alias,
+        firstName: "mockUser.firstName",
+        lastName: "mockUser.lastName",
+        alias: "mockUser.alias",
         password: "password",
-        imageBytes: new Uint8Array(),
+        imageBytes: new Uint8Array([8,8,8,8]),
         imageFileExtension: "png"
     }
-    when(mockServerFacade.register(regReq)).thenResolve({
-        user: mockUser,
-        authToken: anyOfClass(AuthToken)
-    });
+    let result = await serverFacade.register(regReq);
+    
+    expect(result).toBe({message: null, success: true, user: mockUser.dto, token: anyOfClass(AuthToken)})
   });
 
   it("gets followers", async () => {
@@ -41,12 +39,15 @@ describe("Server Facade", () => {
       pageSize: pageSize,
       lastItem: lastItem
     };
-    when(mockServerFacade.getMoreFollowers(getFollowersReq)).thenResolve({
-      success: true,
-      message: null,
-      items: [mockUser.dto],
-      hasMore: anything()
-    });
+    let result = await serverFacade.getMoreFollowers(getFollowersReq);
+    expect(result).toBe(
+      {
+        success: true,
+        message: null,
+        items: [mockUser.dto],
+        hasMore: anything()
+      }
+    )
   });
 
   it("gets follower / followee count", async () => {
@@ -54,7 +55,10 @@ describe("Server Facade", () => {
       token: mockToken.dto,
       user: mockUser.dto
     };
-    when(mockServerFacade.getFolloweeCount(getCountsReq)).thenResolve(anyNumber());
-    when(mockServerFacade.getFollowerCount(getCountsReq)).thenResolve(anyNumber());
+    let result1 = await serverFacade.getFolloweeCount(getCountsReq);
+    expect(result1).toBeGreaterThanOrEqual(0);
+    let result2 = await serverFacade.getFollowerCount(getCountsReq);
+    expect(result2).toBeGreaterThanOrEqual(0);
   });
-});
+
+})

@@ -36,4 +36,4 @@ Notes for M2A:
 # Testing
     clear && cd ~/jacob/byu/340/tweeter-web-starter/tweeter-web/ && npm run test
 # Running
-    See the deploy script
+    clear && cd ~/jacob/byu/340/tweeter-web-starter/ && ./deploy

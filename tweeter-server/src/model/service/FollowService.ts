@@ -1,6 +1,9 @@
 import { AuthToken, UserDto, User, FakeData, AuthTokenDto } from "tweeter-shared";
+import { DynamoDaoFactory } from "../../dynamo_daos/DynamoDaoFactory";
 
 export class FollowService {
+  private factory = new DynamoDaoFactory();
+
   public async loadMoreFollowees (
     token: AuthTokenDto,
     userAlias: string,

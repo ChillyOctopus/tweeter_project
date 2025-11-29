@@ -1,6 +1,9 @@
 import { Status, FakeData, StatusDto, AuthTokenDto } from "tweeter-shared";
+import { DynamoDaoFactory } from "../../dynamo_daos/DynamoDaoFactory";
 
 export class StatusService {
+  private factory = new DynamoDaoFactory();
+  
   public async loadMoreFeed(
     authToken: AuthTokenDto,
     userAlias: string,

@@ -23,7 +23,7 @@ describe("Server Facade", () => {
         imageFileExtension: "png"
     }
     let result = await serverFacade.register(regReq);
-    
+
     expect(result).toBe({message: null, success: true, user: mockUser.dto, token: anyOfClass(AuthToken)})
   });
 

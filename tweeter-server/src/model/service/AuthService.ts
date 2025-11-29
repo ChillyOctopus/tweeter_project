@@ -1,4 +1,4 @@
-import { AuthToken, AuthTokenDto, FakeData, User, UserDto } from "tweeter-shared";
+import { AuthToken, AuthTokenDto, FakeData, UserDto } from "tweeter-shared";
 
 export class AuthService {
   async register(

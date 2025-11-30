@@ -1,4 +1,4 @@
-import { AuthToken, AuthTokenDto, UserDto } from "tweeter-shared";
+import { AuthTokenDto, UserDto } from "tweeter-shared";
 import { DynamoDaoFactory } from "../../dynamo_daos/DynamoDaoFactory";
 
 export class UserService {
@@ -28,6 +28,8 @@ export class UserService {
     }
 
     public async unfollow(authToken: AuthTokenDto, userToUnfollow: UserDto): Promise<void> {
+        // follower = the one who is logged in (given by auth token)
+        // you may decode the token if needed; for now assume alias comes from DAO
         const followerAlias = authToken.alias;
         return this.factory.getUserDao().unfollow(followerAlias, userToUnfollow.alias);
     }

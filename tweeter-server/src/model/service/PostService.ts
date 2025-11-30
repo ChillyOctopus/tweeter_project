@@ -5,6 +5,7 @@ export class PostService {
   private factory = new DynamoDaoFactory();
   
   async postStatus(authToken: AuthTokenDto, status: StatusDto): Promise<void> {
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    const statusDao = this.factory.getStatusDao();
+    await statusDao.postStatus(status);
   }
 }

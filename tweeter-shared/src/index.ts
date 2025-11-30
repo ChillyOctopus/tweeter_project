@@ -1,15 +1,15 @@
 // Domain classes
 export { Follow } from "./model/domain/Follow";
-export { PostSegment, Type } from "./model/domain/PostSegment";
+export { PostSegment, } from "./model/domain/PostSegment";
 export { Status } from "./model/domain/Status";
 export { User } from "./model/domain/User";
 export { AuthToken } from "./model/domain/AuthToken";
 export { FakeData } from "./util/FakeData";
 
 // DTO classes
-export type { UserDto } from "./model/dto/UserDto";
-export type { AuthTokenDto } from "./model/dto/AuthTokenDto";
-export type { StatusDto } from "./model/dto/StatusDto";
+export { UserDto } from "./model/dto/UserDto";
+export { AuthTokenDto } from "./model/dto/AuthTokenDto";
+export { StatusDto } from "./model/dto/StatusDto";
 
 // Requests
 export type { TweeterRequest } from "./model/net/request/TweeterRequest";

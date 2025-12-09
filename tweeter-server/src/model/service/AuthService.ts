@@ -1,5 +1,7 @@
 import { AuthTokenDto, UserDto } from "tweeter-shared";
 import { DynamoDaoFactory } from "../../dynamo_daos/DynamoDaoFactory";
+import bcrypt from "bcryptjs";
+import { v4 as uuidv4 } from "uuid";
 
 export class AuthService {
   private factory = new DynamoDaoFactory();
@@ -12,33 +14,52 @@ export class AuthService {
     imageBytes: Uint8Array,
     imageFileExtension: string
   ): Promise<[UserDto, AuthTokenDto]> {
-    return this.loginOrRegister(alias, password, false, firstName, lastName, imageBytes, imageFileExtension);
+    const authDao = this.factory.getAuthDao();
+    const s3Dao = this.factory.getS3Dao();
+
+    const existing = await authDao.findUserByAlias(alias);
+    if (existing) throw new Error("Alias already exists");
+
+    const fileName = `${alias}.${imageFileExtension}`;
+    const base64 = Buffer.from(imageBytes).toString("base64");
+    const imageUrl = await s3Dao.putImage(fileName, base64);
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const user = new UserDto(firstName, lastName, alias, imageUrl);
+    await authDao.createUserRecord(user, passwordHash);
+
+    const token = await this.createAuthToken(alias);
+    return [user, token];
   }
 
   async login(alias: string, password: string): Promise<[UserDto, AuthTokenDto]> {
-    return this.loginOrRegister(alias, password, true);
+    const authDao = this.factory.getAuthDao();
+
+    const raw = await authDao.getUser(alias);
+    if (!raw) throw new Error("Invalid username");
+
+    const valid = await bcrypt.compare(password, raw.passwordHash);
+    if (!valid) throw new Error("Invalid password");
+
+    const user = new UserDto(raw.firstName, raw.lastName, raw.alias, raw.imageUrl);
+    const token = await this.createAuthToken(alias);
+
+    return [user, token];
   }
 
-  private async loginOrRegister(
-    alias: string,
-    password: string,
-    isLogin: boolean,
-    firstName?: string,
-    lastName?: string,
-    imageBytes?: Uint8Array,
-    imageFileExtension?: string
-  ): Promise<[UserDto, AuthTokenDto]> {
-    const userDao = this.factory.getUserDao();
-    let userDto = {firstName: firstName!, lastName: lastName!, alias: alias, imageUrl: imageBytes!.toString()}; // TODO: Fix the 'imageUrl' to be whatever it needs to be
-    return isLogin ? userDao.login(alias, password) : userDao.register(userDto, password);
+  async logout(auth: AuthTokenDto): Promise<void> {
+    const authDao = this.factory.getAuthDao();
+    const success = await authDao.deleteAuthToken(auth.token);
+    if (!success) throw new Error("Logout failed");
   }
 
-  async logout(authToken: AuthTokenDto): Promise<void> {
-    let success = this.factory.getUserDao().logout(authToken);
-    if (!success) {
-      throw new Error("Logout was not successful.");
-    }
+  private async createAuthToken(alias: string): Promise<AuthTokenDto> {
+    const authDao = this.factory.getAuthDao();
+    const tokenValue = uuidv4();
+    const timestamp = Date.now();
+
+    await authDao.storeAuthToken(tokenValue, alias, timestamp); 
+    return new AuthTokenDto(tokenValue, timestamp, alias);
   }
-  
 }
-

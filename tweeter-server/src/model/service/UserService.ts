@@ -2,41 +2,97 @@ import { AuthTokenDto, UserDto } from "tweeter-shared";
 import { DynamoDaoFactory } from "../../dynamo_daos/DynamoDaoFactory";
 
 export class UserService {
-    private factory = new DynamoDaoFactory();
+  private factory = new DynamoDaoFactory();
 
-    public async getUser(authToken: AuthTokenDto, alias: string): Promise<UserDto | null> {
-        return this.factory.getUserDao().findUserByAlias(alias);
-    }
+  async getUser(token: AuthTokenDto, alias: string): Promise<UserDto | null> {
+    await this.verifyToken(token);
+    const authDao = this.factory.getAuthDao();
+    return authDao.getUser(alias);
+  }
 
-    public async getIsFollowerStatus(authToken: AuthTokenDto, user: UserDto, selectedUser: UserDto): Promise<boolean> {
-        return this.factory.getUserDao().findIsFollowerStatus(user.alias, selectedUser.alias);
-    }
+  async getIsFollowerStatus(
+    token: AuthTokenDto,
+    requester: UserDto,
+    target: UserDto
+  ): Promise<boolean> {
+    await this.verifyToken(token);
 
-    public async getFollowerCount(authToken: AuthTokenDto, user: UserDto): Promise<number> {
-        return this.factory.getUserDao().getFollowerCount(user.alias);
-    }
+    const followDao = this.factory.getFollowDao();
+    const record = await followDao.isFollower(requester.alias, target.alias);
+    return record !== null ? record : false;
+  }
 
-    public async getFolloweeCount(authToken: AuthTokenDto, user: UserDto): Promise<number> {
-        return this.factory.getUserDao().getFolloweeCount(user.alias);
-    }
+  async getFollowerCount(token: AuthTokenDto, user: UserDto): Promise<number> {
+    await this.verifyToken(token);
+    const authDao = this.factory.getAuthDao();
+    const raw = await authDao.getUser(user.alias);
+    return raw?.followerCount ?? 0;
+  }
 
-    public async follow(authToken: AuthTokenDto, userToFollow: UserDto): Promise<void> {
-        // follower = the one who is logged in (given by auth token)
-        // you may decode the token if needed; for now assume alias comes from DAO
-        const followerAlias = authToken.alias; 
-        return this.factory.getUserDao().follow(followerAlias, userToFollow.alias);
-    }
+  async getFolloweeCount(token: AuthTokenDto, user: UserDto): Promise<number> {
+    await this.verifyToken(token);
+    const authDao = this.factory.getAuthDao();
+    const raw = await authDao.getUser(user.alias);
+    return raw?.followeeCount ?? 0;
+  }
 
-    public async unfollow(authToken: AuthTokenDto, userToUnfollow: UserDto): Promise<void> {
-        // follower = the one who is logged in (given by auth token)
-        // you may decode the token if needed; for now assume alias comes from DAO
-        const followerAlias = authToken.alias;
-        return this.factory.getUserDao().unfollow(followerAlias, userToUnfollow.alias);
-    }
+  async follow(token: AuthTokenDto, userToFollow: UserDto): Promise<void> {
+    await this.verifyToken(token);
+    const followerAlias = token.alias;
 
-    public async refreshCounts(authToken: AuthTokenDto, user: UserDto): Promise<[number, number]> {
-        const followerCount = await this.getFollowerCount(authToken, user);
-        const followeeCount = await this.getFolloweeCount(authToken, user);
-        return [followerCount, followeeCount];
-    }
+    const followDao = this.factory.getFollowDao();
+    const authDao = this.factory.getAuthDao();
+
+    await followDao.follow(followerAlias, userToFollow.alias);
+
+    await authDao.increment_counts(
+      followerAlias,
+      "followeeCount",
+      +1
+    );
+
+    await authDao.increment_counts(
+      userToFollow.alias,
+      "followerCount",
+      +1
+    );
+  }
+
+  async unfollow(token: AuthTokenDto, userToUnfollow: UserDto): Promise<void> {
+    await this.verifyToken(token);
+    const followerAlias = token.alias;
+
+    const followDao = this.factory.getFollowDao();
+    const authDao = this.factory.getAuthDao();
+
+    await followDao.unfollow(followerAlias, userToUnfollow.alias);
+
+    await authDao.increment_counts(
+      followerAlias,
+      "followeeCount",
+      -1
+    );
+
+    await authDao.increment_counts(
+      userToUnfollow.alias,
+      "followerCount",
+      -1
+    );
+  }
+
+  async refreshCounts(
+    token: AuthTokenDto,
+    user: UserDto
+  ): Promise<[number, number]> {
+    await this.verifyToken(token);
+    const followerCount = await this.getFollowerCount(token, user);
+    const followeeCount = await this.getFolloweeCount(token, user);
+    return [followerCount, followeeCount];
+  }
+
+  private async verifyToken(token: AuthTokenDto): Promise<void> {
+    const authDao = this.factory.getAuthDao();
+    const valid = await authDao.validateAuthToken(token);
+    if (!valid) throw new Error("Invalid or expired auth token");
+  }
 }

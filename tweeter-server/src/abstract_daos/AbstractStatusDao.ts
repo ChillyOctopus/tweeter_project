@@ -1,17 +1,8 @@
 import { StatusDto } from "tweeter-shared";
 
 export abstract class AbstractStatusDao {
-  public abstract getStory(
-    userAlias: string,
-    pageSize: number,
-    lastItem: StatusDto | null
-  ): Promise<[StatusDto[], boolean]>;
-
-  public abstract getFeed(
-    userAlias: string,
-    pageSize: number,
-    lastItem: StatusDto | null
-  ): Promise<[StatusDto[], boolean]>;
-
-  public abstract postStatus(status: StatusDto): Promise<void>;
+  abstract postToStory(authorAlias: string, status: StatusDto): Promise<void>
+  abstract postToFeedBatch(followerAliases: string[], status: StatusDto): Promise<void>
+  abstract getStory(alias: string, lastItem: StatusDto | null): Promise<{items: StatusDto[], hasMore: boolean}>
+  abstract getFeed(alias: string, lastItem: StatusDto | null): Promise<{items: StatusDto[], hasMore: boolean}>
 }

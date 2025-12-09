@@ -3,7 +3,7 @@ import { PagedStatusItemRequest, PagedStatusItemResponse } from "tweeter-shared"
 
 export const handler = async (request: PagedStatusItemRequest): Promise<PagedStatusItemResponse> => {
     const statusService = new StatusService();
-    const [statusArray, hasMore] = await statusService.loadMoreFeed(request.token, request.userAlias, request.pageSize, request.lastItem);
+    const [statusArray, hasMore] = await statusService.loadMoreFeed(request.token, request.userAlias, request.lastItem);
     return {
         success: true,
         message: null,

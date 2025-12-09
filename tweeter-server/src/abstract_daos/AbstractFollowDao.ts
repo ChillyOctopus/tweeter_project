@@ -1,15 +1,12 @@
 import { UserDto } from "tweeter-shared";
 
 export abstract class AbstractFollowDao {
-  public abstract getFollowers(
-    targetAlias: string,
-    pageSize: number,
-    lastItem: UserDto | null
-  ): Promise<[UserDto[], boolean]>;
-
-  public abstract getFollowees(
-    targetAlias: string,
-    pageSize: number,
-    lastItem: UserDto | null
-  ): Promise<[UserDto[], boolean]>;
+  abstract follow(follower: string, followee: string): Promise<void>
+  abstract unfollow(follower: string, followee: string): Promise<void>
+  abstract getAllFollowers(alias: string): Promise<string[]> 
+  abstract isFollower(follower: string, followee: string): Promise<boolean>
+  abstract getFollowerCount(alias: string): Promise<number>
+  abstract getFolloweeCount(alias: string): Promise<number>
+  abstract getFollowers(alias: string, lastItem: UserDto | null): Promise<{items: UserDto[], hasMore: boolean}>
+  abstract getFollowees(alias: string, lastItem: UserDto | null): Promise<{items: UserDto[], hasMore: boolean}>
 }

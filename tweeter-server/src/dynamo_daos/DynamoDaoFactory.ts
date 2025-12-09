@@ -2,7 +2,7 @@ import { AbstractDaoFactory } from "../abstract_daos/AbstractDaoFactory";
 import { DynamoStatusDao } from "./DynamoStatusDao";
 import { DynamoFollowDao } from "./DynamoFollowDao";
 import { DynamoS3Dao } from "./DynamoS3Dao";
-import { DynamoUserDao } from "./DynamoUserDao";
+import { DynamoAuthDao } from "./DynamoAuthDao";
 
 export class DynamoDaoFactory extends AbstractDaoFactory {
   public getStatusDao(): DynamoStatusDao {
@@ -11,8 +11,8 @@ export class DynamoDaoFactory extends AbstractDaoFactory {
   public getFollowDao(): DynamoFollowDao {
     return new DynamoFollowDao();
   }
-  public getUserDao(): DynamoUserDao {
-    return new DynamoUserDao();
+  public getAuthDao(): DynamoAuthDao {
+    return new DynamoAuthDao();
   }
   public getS3Dao(): DynamoS3Dao {
     return new DynamoS3Dao();

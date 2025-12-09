@@ -1,10 +1,9 @@
 // Domain classes
 export { Follow } from "./model/domain/Follow";
-export { PostSegment, } from "./model/domain/PostSegment";
+export { PostSegment, Type } from "./model/domain/PostSegment";
 export { Status } from "./model/domain/Status";
 export { User } from "./model/domain/User";
 export { AuthToken } from "./model/domain/AuthToken";
-export { FakeData } from "./util/FakeData";
 
 // DTO classes
 export { UserDto } from "./model/dto/UserDto";

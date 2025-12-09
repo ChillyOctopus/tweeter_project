@@ -6,6 +6,6 @@ export class PostService {
   
   async postStatus(authToken: AuthTokenDto, status: StatusDto): Promise<void> {
     const statusDao = this.factory.getStatusDao();
-    await statusDao.postStatus(status);
+    await statusDao.postToStory(authToken.alias, status);
   }
 }

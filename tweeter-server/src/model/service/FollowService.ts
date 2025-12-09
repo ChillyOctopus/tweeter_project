@@ -4,32 +4,37 @@ import { DynamoDaoFactory } from "../../dynamo_daos/DynamoDaoFactory";
 export class FollowService {
   private factory = new DynamoDaoFactory();
 
-  public async loadMoreFollowees(
+  async loadMoreFollowees(
     token: AuthTokenDto,
     userAlias: string,
-    pageSize: number,
     lastItem: UserDto | null
   ): Promise<[UserDto[], boolean]> {
-    return this.loadMore(token, userAlias, pageSize, lastItem, false);
+    await this.verifyToken(token);
+    return this.query(userAlias, lastItem, false);
   }
 
-  public async loadMoreFollowers(
+  async loadMoreFollowers(
     token: AuthTokenDto,
     userAlias: string,
-    pageSize: number,
     lastItem: UserDto | null
   ): Promise<[UserDto[], boolean]> {
-    return this.loadMore(token, userAlias, pageSize, lastItem, true);
+    await this.verifyToken(token);
+    return this.query(userAlias, lastItem, true);
   }
 
-  private async loadMore(
-    token: AuthTokenDto,
+  private async query(
     userAlias: string,
-    pageSize: number,
     lastItem: UserDto | null,
     fetchFollowers: boolean
   ): Promise<[UserDto[], boolean]> {
     const followDao = this.factory.getFollowDao();
-    return fetchFollowers ? await followDao.getFollowers(userAlias, pageSize, lastItem) : await followDao.getFollowees(userAlias, pageSize, lastItem);
+    const results = fetchFollowers ? await followDao.getFollowers(userAlias, lastItem) : await followDao.getFollowees(userAlias, lastItem);
+    return [results.items, results.hasMore]
+  }
+
+  private async verifyToken(token: AuthTokenDto): Promise<void> {
+    const userDao = this.factory.getAuthDao();
+    const valid = await userDao.validateAuthToken(token);
+    if (!valid) throw new Error("Invalid or expired auth token");
   }
 }

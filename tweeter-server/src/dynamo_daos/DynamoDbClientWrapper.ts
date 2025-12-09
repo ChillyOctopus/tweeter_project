@@ -28,36 +28,37 @@ export class DynamoDbClientWrapper {
     return response.Item ? unmarshall(response.Item) : null;
   }
 
-  public async put(table: string, item: Record<string, any>): Promise<void> {
+  public async put(table: string, item: Record<string, any>, conditionExpression?: string, expressionNames?: Record<string, string>, expressionValues?: Record<string, any>): Promise<void> {
     await this.client.send(
       new PutItemCommand({
         TableName: table,
         Item: marshall(item),
+        ConditionExpression: conditionExpression,
+        ExpressionAttributeNames: expressionNames,
+        ExpressionAttributeValues: expressionValues ? marshall(expressionValues) : undefined,
       })
     );
   }
 
-  public async delete(table: string, key: Record<string, any>): Promise<void> {
+  public async delete(table: string, key: Record<string, any>, conditionExpression?: string): Promise<void> {
     await this.client.send(
       new DeleteItemCommand({
         TableName: table,
         Key: marshall(key),
+        ConditionExpression: conditionExpression
       })
     );
   }
 
-  public async update(
-    table: string,
-    key: Record<string, any>,
-    updateExpression: string,
-    expressionValues: Record<string, any>
-  ): Promise<void> {
+  public async update(table: string, key: Record<string, any>, updateExpression: string, expressionValues: Record<string, any>, expressionNames?: Record<string, string>, conditionExpression?: string): Promise<void> {
     await this.client.send(
       new UpdateItemCommand({
         TableName: table,
         Key: marshall(key),
         UpdateExpression: updateExpression,
         ExpressionAttributeValues: marshall(expressionValues),
+        ExpressionAttributeNames: expressionNames,
+        ConditionExpression: conditionExpression,
       })
     );
   }
@@ -92,7 +93,7 @@ export class DynamoDbClientWrapper {
     return { items, lastKey };
   }
 
-  // ---------- Batch write (auto-chunked to 25) ----------
+  // ---------- Batch write (25 max) ----------
   public async batchWrite(
     table: string,
     items: Record<string, any>[]

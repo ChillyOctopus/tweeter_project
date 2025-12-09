@@ -1,6 +1,6 @@
 import { AuthTokenDto, UserDto } from "tweeter-shared";
 import { DynamoDaoFactory } from "../../dynamo_daos/DynamoDaoFactory";
-import bcrypt from "bcryptjs";
+import bcryptjs from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
 
 export class AuthService {
@@ -24,7 +24,7 @@ export class AuthService {
     const base64 = Buffer.from(imageBytes).toString("base64");
     const imageUrl = await s3Dao.putImage(fileName, base64);
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcryptjs.hash(password, 10);
 
     const user = new UserDto(firstName, lastName, alias, imageUrl);
     await authDao.createUserRecord(user, passwordHash);
@@ -39,7 +39,7 @@ export class AuthService {
     const raw = await authDao.getUser(alias);
     if (!raw) throw new Error("Invalid username");
 
-    const valid = await bcrypt.compare(password, raw.passwordHash);
+    const valid = await bcryptjs.compare(password, raw.passwordHash);
     if (!valid) throw new Error("Invalid password");
 
     const user = new UserDto(raw.firstName, raw.lastName, raw.alias, raw.imageUrl);

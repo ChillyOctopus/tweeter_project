@@ -1,58 +1,53 @@
-import {
-  DynamoDBClient,
-  QueryCommand,
-  PutItemCommand,
-  DeleteItemCommand,
-} from "@aws-sdk/client-dynamodb";
 import { AbstractFollowDao } from "../abstract_daos/AbstractFollowDao";
 import { UserDto } from "tweeter-shared";
 import { DynamoDbClientWrapper } from "./DynamoDbClientWrapper";
+import { FollowsTable } from "./DynamoConstants";
 
 export class DynamoFollowDao extends AbstractFollowDao {
   private db = new DynamoDbClientWrapper();
-  private readonly TABLE = "TweeterFollows";
-
-  // Follows table modeling:
-  // PK: FOLLOWEE#<alias>, SK: FOLLOWER#<alias>   — for follower lookup & follower counts
-  // PK: FOLLOWER#<alias>, SK: FOLLOWEE#<alias>   — for followee lookup & followee counts
 
   async follow(follower: string, followee: string): Promise<void> {
-    // Put into table
-    await this.db.put(this.TABLE, { follower_alias: follower, followee_alias: followee });
-    // TODO: Increment follower/followee counts in users table (atomic or via UserDao)
+    await this.db.put(FollowsTable.TABLE, {
+      [FollowsTable.ATTR_FOLLOWER_ALIAS]: follower,
+      [FollowsTable.ATTR_FOLLOWEE_ALIAS]: followee,
+    });
   }
 
   async unfollow(follower: string, followee: string): Promise<void> {
-    await this.db.delete(this.TABLE, { follower_alias: follower, followee_alias: followee });
-    // TODO: Decrement counts
+    await this.db.delete(FollowsTable.TABLE, {
+      [FollowsTable.PK]: follower,
+      [FollowsTable.SK]: followee,
+    });
   }
 
   async getAllFollowers(alias: string): Promise<string[]> {
     const res = await this.db.query({
-      table: this.TABLE,
-      index: "FolloweesIndex",
-      keyConditionExpression: "followee_alias = :a",
+      table: FollowsTable.TABLE,
+      index: FollowsTable.GSI_FOLLOWEES,
+      keyConditionExpression: `${FollowsTable.GSI_FOLLOWEES_PK} = :a`,
       expressionValues: { ":a": alias },
-    })
-    return res.items.map((i: { follower_alias: any; }) => i.follower_alias);
+    });
+
+    return res.items.map(i => i[FollowsTable.ATTR_FOLLOWER_ALIAS]);
   }
 
   async isFollower(follower: string, followee: string): Promise<boolean> {
-    // Query GSI FolloweesIndex: PK followee_alias = followee, SK follower_alias = follower
     const res = await this.db.query({
-      table: this.TABLE,
-      index: "FolloweesIndex",
-      keyConditionExpression: "followee_alias = :f AND follower_alias = :u",
+      table: FollowsTable.TABLE,
+      index: FollowsTable.GSI_FOLLOWEES,
+      keyConditionExpression:
+        `${FollowsTable.GSI_FOLLOWEES_PK} = :f AND ${FollowsTable.GSI_FOLLOWEES_SK} = :u`,
       expressionValues: { ":f": followee, ":u": follower },
     });
+
     return res.items.length > 0;
   }
 
   async getFollowerCount(alias: string): Promise<number> {
     const res = await this.db.query({
-      table: this.TABLE,
-      index: "FolloweesIndex",
-      keyConditionExpression: "followee_alias = :a",
+      table: FollowsTable.TABLE,
+      index: FollowsTable.GSI_FOLLOWEES,
+      keyConditionExpression: `${FollowsTable.GSI_FOLLOWEES_PK} = :a`,
       expressionValues: { ":a": alias },
     });
     return res.items.length;
@@ -60,39 +55,51 @@ export class DynamoFollowDao extends AbstractFollowDao {
 
   async getFolloweeCount(alias: string): Promise<number> {
     const res = await this.db.query({
-      table: this.TABLE,
-      keyConditionExpression: "follower_alias = :a",
+      table: FollowsTable.TABLE,
+      keyConditionExpression: `${FollowsTable.PK} = :a`,
       expressionValues: { ":a": alias },
     });
     return res.items.length;
   }
 
-  async getFollowers(alias: string, lastItem: UserDto | null): Promise<{items: UserDto[], hasMore: boolean}> {
+  async getFollowers(alias: string, lastItem: UserDto | null) {
     const res = await this.db.query({
-      table: this.TABLE,
-      index: "FolloweesIndex",
-      keyConditionExpression: "followee_alias = :a",
+      table: FollowsTable.TABLE,
+      index: FollowsTable.GSI_FOLLOWEES,
+      keyConditionExpression: `${FollowsTable.GSI_FOLLOWEES_PK} = :a`,
       expressionValues: { ":a": alias },
       limit: 25,
-      exclusiveStartKey: lastItem ? { followee_alias: alias, follower_alias: lastItem.alias } : undefined,
+      exclusiveStartKey: lastItem
+        ? {
+            [FollowsTable.GSI_FOLLOWEES_PK]: alias,
+            [FollowsTable.GSI_FOLLOWEES_SK]: lastItem.alias,
+          }
+        : undefined,
     });
+
     return {
-      items: res.items.map((i: { follower_alias: string; }) => new UserDto("", "", i.follower_alias, "")),
-      hasMore: res.lastKey,
+      items: res.items.map(i => new UserDto("", "", i[FollowsTable.ATTR_FOLLOWER_ALIAS], "")),
+      hasMore: !!res.lastKey,
     };
   }
 
-  async getFollowees(alias: string, lastItem: UserDto | null): Promise<{items: UserDto[], hasMore: boolean}> {
+  async getFollowees(alias: string, lastItem: UserDto | null) {
     const res = await this.db.query({
-      table: this.TABLE,
-      keyConditionExpression: "follower_alias = :a",
+      table: FollowsTable.TABLE,
+      keyConditionExpression: `${FollowsTable.PK} = :a`,
       expressionValues: { ":a": alias },
       limit: 25,
-      exclusiveStartKey: lastItem ? { follower_alias: alias, followee_alias: lastItem.alias } : undefined,
+      exclusiveStartKey: lastItem
+        ? {
+            [FollowsTable.PK]: alias,
+            [FollowsTable.SK]: lastItem.alias,
+          }
+        : undefined,
     });
+
     return {
-      items: res.items.map((i: { followee_alias: string; }) => new UserDto("", "", i.followee_alias, "")),
-      hasMore: res.lastKey,
+      items: res.items.map(i => new UserDto("", "", i[FollowsTable.ATTR_FOLLOWEE_ALIAS], "")),
+      hasMore: !!res.lastKey,
     };
   }
 }

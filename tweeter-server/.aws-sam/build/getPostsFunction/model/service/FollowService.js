@@ -1,21 +1,27 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FollowService = void 0;
-const tweeter_shared_1 = require("tweeter-shared");
+const DynamoDaoFactory_1 = require("../../dynamo_daos/DynamoDaoFactory");
 class FollowService {
-    async loadMoreFollowees(token, userAlias, pageSize, lastItem) {
-        return this.loadMoreFollowersOrFollowees(token, userAlias, pageSize, lastItem, false);
+    factory = new DynamoDaoFactory_1.DynamoDaoFactory();
+    async loadMoreFollowees(token, userAlias, lastItem) {
+        await this.verifyToken(token);
+        return this.query(userAlias, lastItem, false);
     }
-    ;
-    async loadMoreFollowers(token, userAlias, pageSize, lastItem) {
-        return this.loadMoreFollowersOrFollowees(token, userAlias, pageSize, lastItem, true);
+    async loadMoreFollowers(token, userAlias, lastItem) {
+        await this.verifyToken(token);
+        return this.query(userAlias, lastItem, true);
     }
-    ;
-    async loadMoreFollowersOrFollowees(token, userAlias, pageSize, lastItem, fetchFollowers) {
-        const [items, hasMore] = tweeter_shared_1.FakeData.instance.getPageOfUsers(tweeter_shared_1.User.fromDto(lastItem), pageSize, userAlias);
-        const dtos = items.map((user) => user.dto);
-        return [dtos, hasMore];
+    async query(userAlias, lastItem, fetchFollowers) {
+        const followDao = this.factory.getFollowDao();
+        const results = fetchFollowers ? await followDao.getFollowers(userAlias, lastItem) : await followDao.getFollowees(userAlias, lastItem);
+        return [results.items, results.hasMore];
     }
-    ;
+    async verifyToken(token) {
+        const userDao = this.factory.getAuthDao();
+        const valid = await userDao.validateAuthToken(token);
+        if (!valid)
+            throw new Error("Invalid or expired auth token");
+    }
 }
 exports.FollowService = FollowService;

@@ -72,7 +72,7 @@ export class DynamoDbClientWrapper {
       expressionValues: Record<string, any>;
       limit?: number;
       exclusiveStartKey?: Record<string, any>;
-      scanForward?: boolean; // ascending = true
+      scanForward?: boolean;
     }
   ): Promise<{ items: any[]; lastKey: any | undefined }> {
     const response = await this.client.send(

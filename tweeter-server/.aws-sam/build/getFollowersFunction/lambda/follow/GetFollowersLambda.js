@@ -4,7 +4,7 @@ exports.handler = void 0;
 const FollowService_1 = require("../../model/service/FollowService");
 const handler = async (request) => {
     const followService = new FollowService_1.FollowService();
-    const [items, hasMore] = await followService.loadMoreFollowers(request.token, request.userAlias, request.pageSize, request.lastItem);
+    const [items, hasMore] = await followService.loadMoreFollowers(request.token, request.userAlias, request.lastItem);
     return {
         success: true,
         message: null,

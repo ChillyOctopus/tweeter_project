@@ -1,16 +1,15 @@
 import { AuthTokenDto, UserDto } from "tweeter-shared";
 import { DynamoDbClientWrapper } from "./DynamoDbClientWrapper";
 import { AbstractAuthDao } from "../abstract_daos/AbstractAuthDao";
+import { UsersTable, AuthTokensTable } from "./DynamoConstants";
 
 export class DynamoAuthDao extends AbstractAuthDao {
   private db = new DynamoDbClientWrapper();
-  private readonly USERS_TABLE = process.env.USERS_TABLE!;
-  private readonly TOKENS_TABLE = process.env.AUTH_TOKENS_TABLE!;
 
   // ---------- User ----------
   async createUserRecord(user: UserDto, passwordHash: string): Promise<void> {
-    await this.db.put(this.USERS_TABLE, {
-      alias: user.alias,
+    await this.db.put(UsersTable.TABLE, {
+      [UsersTable.ATTR_ALIAS]: user.alias,
       firstName: user.firstName,
       lastName: user.lastName,
       imageUrl: user.imageUrl,
@@ -20,21 +19,25 @@ export class DynamoAuthDao extends AbstractAuthDao {
     });
   }
 
-  async increment_counts(alias: string, index: string, delta: number){
-    await this.db.update(this.USERS_TABLE,
-      { alias },
-      `ADD { index } :delta`,
+  async increment_counts(alias: string, index: string, delta: number): Promise<void> {
+    await this.db.update(
+      UsersTable.TABLE,
+      { [UsersTable.PK]: alias },
+      `ADD ${index} :delta`,
       { ":delta": delta }
     );
   }
 
   async validateAuthToken(authToken: AuthTokenDto): Promise<boolean> {
-    const tokenRecord = await this.db.get(this.TOKENS_TABLE, { token: authToken.token });
+    const tokenRecord = await this.db.get(
+      AuthTokensTable.TABLE,
+      { [AuthTokensTable.PK]: authToken.token }
+    );
     return tokenRecord !== null;
   }
 
   async getUser(alias: string): Promise<any | null> {
-    return this.db.get(this.USERS_TABLE, { alias });
+    return this.db.get(UsersTable.TABLE, { [UsersTable.PK]: alias });
   }
 
   async findUserByAlias(alias: string): Promise<UserDto | null> {
@@ -45,15 +48,17 @@ export class DynamoAuthDao extends AbstractAuthDao {
 
   // ---------- AuthToken ----------
   async storeAuthToken(tokenValue: string, alias: string, timestamp: number): Promise<void> {
-    await this.db.put(this.TOKENS_TABLE, {
-      token: tokenValue,
+    await this.db.put(AuthTokensTable.TABLE, {
+      [AuthTokensTable.ATTR_TOKEN]: tokenValue,
       alias,
       timestamp,
     });
   }
 
   async deleteAuthToken(tokenValue: string): Promise<boolean> {
-    await this.db.delete(this.TOKENS_TABLE, { token: tokenValue });
+    await this.db.delete(AuthTokensTable.TABLE, {
+      [AuthTokensTable.PK]: tokenValue,
+    });
     return true;
   }
 }

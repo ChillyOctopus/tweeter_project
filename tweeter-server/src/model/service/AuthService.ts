@@ -2,6 +2,7 @@ import { AuthTokenDto, UserDto } from "tweeter-shared";
 import { DynamoDaoFactory } from "../../dynamo_daos/DynamoDaoFactory";
 import bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
+import { UsersTable } from "../../dynamo_daos/DynamoConstants";
 
 export class AuthService {
   private factory = new DynamoDaoFactory();
@@ -39,10 +40,10 @@ export class AuthService {
     const raw = await authDao.getUserRaw(alias);
     if (!raw) throw new Error("Invalid username");
 
-    const valid = await bcrypt.compare(password, raw.passwordHash);
+    const valid = await bcrypt.compare(password, raw[UsersTable.ATTR_PASSWORD_HASH]);
     if (!valid) throw new Error("Invalid password");
 
-    const user = new UserDto(raw.firstName, raw.lastName, raw.alias, raw.imageUrl);
+    const user = new UserDto(raw[UsersTable.ATTR_FIRST_NAME], raw[UsersTable.ATTR_LAST_NAME], raw[UsersTable.ATTR_ALIAS], raw[UsersTable.ATTR_IMAGE_URL]);
     const token = await this.createAuthToken(alias);
 
     return [user, token];

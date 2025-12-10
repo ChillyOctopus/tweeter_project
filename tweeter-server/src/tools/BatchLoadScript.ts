@@ -7,7 +7,7 @@ import { User } from "tweeter-shared";
 const mainUsername = "a";
 const baseFollowerAlias = "a";
 const followerPassword = "a";
-const followerImageUrl ="./RedPixel.png";
+const followerImageUrl ="https://bucket-8257-6541-7292-num-0.s3.us-east-2.amazonaws.com/image/a.png";
 const baseFollowerFirstName = "a";
 const baseFollowerLastName = "a";
 

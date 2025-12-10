@@ -1,0 +1,444 @@
+Verify — quick checklist
+
+You already have: services, DAOs, DynamoConstants, template.yaml, DynamoDbClientWrapper, S3 DAO, Status/Follow services and DAOs, client/server pieces.
+
+Missing for Milestone 4B: SQS queues, 2 new queue-processing Lambdas (FollowFetcher and JobHandler), modifications to Post flow to enqueue, batch fan-out logic in Lambdas (not in service), batch-write feed writes, a deploy-time template update (queues + lambda triggers + IAM), population scripts, and an automated integration Jest test.
+
+I’ll produce a concrete step-by-step plan with exact file locations and the minimal code/architecture you must add/modify to comply.
+
+Assess — goal & constraints
+Goal: implement scalable status processing so:
+
+Post returns <1s perceived latency.
+
+New status is visible to up to 10k followers within 120s.
+
+Each feed page response <1s.
+Constraints & operational limits:
+
+Feed table must be written at write-time (fan-out), but feed table WCU ≤ 100 during steady operation (you can raise temporarily during population).
+
+Use two SQS queues: PostQueue and JobQueue (per spec).
+
+Use batch writes (25 items) to DynamoDB for feed writes.
+
+Ensure Lambda concurrency/batch sizing does not exceed feed table WCU.
+
+High-level design (how pieces interact)
+
+Client -> PostStatusLambda (fast): records status to story table synchronously, then enqueues one message to PostQueue containing the author alias + status metadata — return success to client immediately.
+
+FollowFetcher Lambda (triggered by PostQueue): reads follower list for author, chunks follower aliases into jobs of N followers (e.g., 250 per job or whichever you choose), then enqueues those jobs into JobQueue.
+
+JobHandler Lambda (triggered by JobQueue): receives a batch of jobs (maybe multiple messages), each job contains a slice of followers; JobHandler does BatchWrite to feed table to insert status entries into each follower's feed (chunked to 25 per BatchWrite request).
+
+Use DynamoDbDocumentClient batch-write (or your DynamoDbClientWrapper.batchWrite) to write chunks of up to 25 items with retry of UnprocessedItems.
+
+Control concurrency so we don’t blow WCU: tune SQS BatchSize, Lambda reserved concurrency for JobHandler, and/or set event source mapping concurrency limits.
+
+Solve — concrete implementation plan (file by file), minimal code sketches & required template changes
+
+A. template.yaml (SAM) — resources to add/modify
+File: tweeter-server/template.yaml (or same template)
+Add (or un-comment and flesh out) the following resources:
+
+SQS queues
+
+PostQueue:
+  Type: AWS::SQS::Queue
+  Properties:
+    QueueName: tweeter-post-queue
+
+JobQueue:
+  Type: AWS::SQS::Queue
+  Properties:
+    QueueName: tweeter-job-queue
+
+
+Lambdas and SQS triggers
+
+postStatusFunction already exists — update handler to lambda/post/PostStatusLambda.handler (you may already have this). Ensure it has permission to send messages to PostQueue and put item to story table and to S3 (existing policies may already provide this).
+
+Add followFetcherFunction:
+
+followFetcherFunction:
+  Type: AWS::Serverless::Function
+  Properties:
+    FunctionName: followFetcherFunction
+    Handler: lambda/queues/FollowFetcherLambda.handler
+    Policies: *commonPolicies
+    Events:
+      PostQueueEvent:
+        Type: SQS
+        Properties:
+          Queue: !GetAtt PostQueue.Arn
+          BatchSize: 1                 # process one post message at a time
+
+
+Add jobHandlerFunction:
+
+jobHandlerFunction:
+  Type: AWS::Serverless::Function
+  Properties:
+    FunctionName: jobHandlerFunction
+    Handler: lambda/queues/JobHandlerLambda.handler
+    Policies: *commonPolicies
+    Events:
+      JobQueueEvent:
+        Type: SQS
+        Properties:
+          Queue: !GetAtt JobQueue.Arn
+          BatchSize: 5                  # tune this to control write load
+          MaximumBatchingWindowInSeconds: 2
+
+
+Environment variables for lambdas (ensure each Lambda has needed env vars):
+
+USERS_TABLE, FOLLOWS_TABLE, STORY_TABLE, FEED_TABLE, AUTH_TOKENS_TABLE, POST_QUEUE_URL (or name), JOB_QUEUE_URL, REGION, S3_BUCKET
+You can set these under Globals->Function.Environment or per function Environment: Variables:.
+
+IAM: ensure queue send/receive and DynamoDB write permissions are present for these lambdas. Your x-common-policies includes AmazonDynamoDBFullAccess and AmazonSQSFullAccess — acceptable for class project but tighten later.
+
+B. New Lambda source files
+Place under src/lambda/queues/
+
+src/lambda/queues/FollowFetcherLambda.ts
+Responsibility:
+
+event contains a single Post message: { authorAlias, status: { post, timestamp, ... } }
+
+Query follow DAO for all followers of author (you likely already have getAllFollowers(authorAlias) in follow DAO).
+
+Chunk follower list into jobs (size JOB_CHUNK_SIZE, e.g., 250). For each chunk, send message to JobQueue containing { authorAlias, statusDto, followerAliases: [...] }.
+
+File sketch (TypeScript):
+
+import { SQSEvent } from "aws-lambda";
+import { DynamoDaoFactory } from "../../../dynamo_daos/DynamoDaoFactory";
+import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
+import { JobQueueUrl } from "../../DynamoConstants"; // or env var
+
+const JOB_CHUNK_SIZE = 250;
+
+export const handler = async (event: SQSEvent) => {
+  const factory = new DynamoDaoFactory();
+  const followDao = factory.getFollowDao();
+  const sqs = new SQSClient({});
+
+  for (const record of event.Records) {
+    const body = JSON.parse(record.body);
+    const { authorAlias, status } = body;
+
+    const followers = await followDao.getAllFollowers(authorAlias); // returns string[]
+    for (let i = 0; i < followers.length; i += JOB_CHUNK_SIZE) {
+      const chunk = followers.slice(i, i + JOB_CHUNK_SIZE);
+      await sqs.send(new SendMessageCommand({
+        QueueUrl: process.env.JOB_QUEUE_URL!,
+        MessageBody: JSON.stringify({ authorAlias, status, followerAliases: chunk })
+      }));
+    }
+  }
+};
+
+
+src/lambda/queues/JobHandlerLambda.ts
+Responsibility:
+
+SQS event may contain up to BatchSize messages; each message contains followerAliases[] and the status.
+
+For each message, build feed-item objects and batchWrite to feed table in chunks of 25 (DynamoDb batchWrite).
+
+Use DynamoDbClientWrapper.batchWrite(table, items) that already chunks 25; ensure wrapper handles marshalling and unprocessed items; if not, implement retry logic.
+
+File sketch:
+
+import { SQSEvent } from "aws-lambda";
+import { DynamoDbClientWrapper } from "../../../dynamo_daos/DynamoDbClientWrapper";
+import { FeedTable } from "../../../dynamo_daos/DynamoConstants";
+
+const BATCH_WRITE_SIZE = 25;
+
+export const handler = async (event: SQSEvent) => {
+  const db = new DynamoDbClientWrapper();
+
+  for (const record of event.Records) {
+    const job = JSON.parse(record.body);
+    const { status, followerAliases } = job;
+
+    // create items per follower
+    const items = followerAliases.map(alias => ({
+      [FeedTable.PK]: alias,
+      [FeedTable.SK]: status.timestamp,
+      [FeedTable.ATTR_POST]: status.post,
+      [FeedTable.ATTR_USER]: JSON.stringify(status.user),
+      [FeedTable.ATTR_AUTHOR]: status.user.alias,
+    }));
+
+    await db.batchWrite(FeedTable.TABLE, items); // ensure wrapper handles 25 chunking and retries
+  }
+};
+
+
+C. Modify PostStatus flow (server side) — fast response + enqueue
+File to update: src/model/service/StatusService.ts and/or src/lambda/post/PostStatusLambda.ts
+
+Current (server) postStatus likely writes to story synchronously and then directly fan-out or calls statusDao.postStatus. Replace/modify to:
+
+Validate token.
+
+Write to STORY table synchronously (so author sees it immediately).
+
+Publish a single message to PostQueue with author alias and minimal status metadata (timestamp, post body, user alias). Return success immediately.
+
+Where to put SQS send code:
+
+Keep SQS calling logic in a small DAO-like helper or directly in service: use SQSClient.send(SendMessageCommand) to process.env.POST_QUEUE_URL.
+
+Example change in StatusService.postStatus(...):
+
+import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
+
+async postStatus(token, statusDto) {
+  this.validateAuth(token);
+  const statusDao = this.factory.getStatusDao();
+  // 1. write to story
+  await statusDao.postToStory(statusDto.user.alias, statusDto);
+
+  // 2. enqueue PostQueue message
+  const sqs = new SQSClient({});
+  await sqs.send(new SendMessageCommand({
+    QueueUrl: process.env.POST_QUEUE_URL,
+    MessageBody: JSON.stringify({ authorAlias: statusDto.user.alias, status: statusDto })
+  }));
+  // return immediately (client awaited function will return)
+}
+
+
+D. DAOs: ensure these support high-throughput and the schemas
+Files impacted: src/dynamo_daos/DynamoConstants.ts, DynamoStatusDao.ts, DynamoFollowDao.ts, DynamoAuthDao.ts
+
+Feed table schema: PK = alias (follower), SK = timestamp, plus attributes (post, user json, author alias).
+
+DynamoDbClientWrapper.batchWrite(table, items) must:
+
+Accept raw items with attribute names as ready-to-marshall JS objects and perform batch write with retry for UnprocessedItems (your wrapper already chunks but does not implement retry of UnprocessedItems — add retry logic).
+
+Accept options to marshall with removeUndefinedValues: true when calling marshall(...). (You previously hit that error — fix by passing this option.)
+
+Example wrapper update:
+
+import { marshall } from "@aws-sdk/util-dynamodb";
+// ...
+marshall(item, { removeUndefinedValues: true })
+
+
+And for batchWrite, on receiving UnprocessedItems from BatchWriteItemCommand response, you MUST loop and resend until none remain (exponential backoff).
+
+E. Population scripts (10k users + followers)
+Place files:
+
+src/tools/BatchLoadScript.ts (entry)
+
+src/tools/FillUserTableDao.ts
+
+src/tools/FillFollowTableDao.ts
+(Use BatchWriteCommand from @aws-sdk/lib-dynamodb as in Milestone doc; those examples are good — copy/adapt and update table names to constants in DynamoConstants.)
+
+F. Jest integration test
+Place:
+tests/integration/PostStatus.integration.test.ts
+Test flow (as required):
+
+Use ServerFacade (or client-side Presenter) to log in a user (or create/test user via DAO directly).
+
+Use Presenter/Client PostService to post a status (await).
+
+Assert that UI success toast was shown — since this is server integration, it's simpler to:
+
+Call server PostStatus API via ServerFacade, await response, assert success true.
+
+Query ServerFacade.getStory (or direct DAO) to fetch the story for user and assert the new status exists and fields match.
+
+Use jest + ts-mockito to mock external dependencies if needed, but since test is integration you can run against local stack or mocked DynamoDB (localstack) — for class project, calling the server-side code directly (not deploying) is acceptable.
+
+G. Monitoring & throttling configuration (important)
+
+Set JobHandler Lambda reserved concurrency to small number (e.g., 5) to avoid too many concurrent batch writes into feed table.
+
+Set SQS event mapping BatchSize and MaximumBatchingWindowInSeconds to control how many messages lambda sees at once.
+
+If feed has 100 WCU, compute worst-case: each BatchWrite of 25 items (25 * 1 WCU) across R concurrent writes yields WCU demand. Example: if 4 concurrent writes of 25 items = 100 WCU. Tune reserved concurrency accordingly.
+
+In console: Lambda -> Configuration -> Concurrency to set reserved concurrency.
+
+Act — exact next steps with file locations (1–12 actionable steps you can implement now)
+
+Add constants and env var names
+
+File: src/dynamo_daos/DynamoConstants.ts
+
+Add POST_QUEUE_URL, JOB_QUEUE_URL, and feed/story table attribute names. Example:
+
+export namespace PostQueue { export const ENV = "POST_QUEUE_URL"; }
+export namespace JobQueue { export const ENV = "JOB_QUEUE_URL"; }
+
+export namespace FeedTable {
+  export const TABLE = "feed";
+  export const PK = "alias";
+  export const SK = "timestamp";
+  export const ATTR_POST = "post";
+  export const ATTR_USER = "user"; // or storyUser consistency
+  export const ATTR_AUTHOR = "author";
+}
+
+
+Update template.yaml
+
+Add SQS queues (PostQueue, JobQueue) and the two new Lambdas (followFetcherFunction, jobHandlerFunction) with SQS events and environment variable wiring. Also add POST_QUEUE_URL/JOB_QUEUE_URL to Lambda Environment.Variables (use !Ref PostQueue or !GetAtt PostQueue.QueueUrl depending on SAM). Give permission to PostStatusFunction to SendMessage to PostQueue.
+
+Modify StatusService.postStatus (server)
+
+File: src/model/service/StatusService.ts
+
+Replace full fanout with: write to story table then enqueue to PostQueue (SQS). Return immediately.
+
+Implement FollowFetcherLambda
+
+File: src/lambda/queues/FollowFetcherLambda.ts
+
+Read followers via factory.getFollowDao().getAllFollowers(authorAlias) and send chunked messages to JobQueue.
+
+Implement JobHandlerLambda
+
+File: src/lambda/queues/JobHandlerLambda.ts
+
+For each job message, create feed items for followerAliases and call DynamoDbClientWrapper.batchWrite(FeedTable.TABLE, items); ensure wrapper retries unprocessed items.
+
+Update DynamoDbClientWrapper.batchWrite
+
+File: src/dynamo_daos/DynamoDbClientWrapper.ts
+
+Ensure marshall uses { removeUndefinedValues: true }.
+
+Add retry loop for UnprocessedItems when calling BatchWriteItemCommand (or call BatchWriteCommand from DocumentClient with same behavior). Return after all unprocessed are handled.
+
+Implement population scripts (10k)
+
+Files: src/tools/FillUserTableDao.ts, src/tools/FillFollowTableDao.ts, src/tools/BatchLoadScript.ts
+
+Use example code from milestone doc adapting table names and attributes.
+
+Write automated test
+
+File: tests/integration/PostStatus.integration.test.ts
+
+Use jest to call ServerFacade.postStatus and ServerFacade.getStory to assert status appended.
+
+Tune concurrency/WCU
+
+Before running population, raise feed table WCU (and follow/user tables) to, say, 200.
+
+After population, set feed WCU to ≤100 (per rubric).
+
+IAM & Policies
+
+Ensure functions have SQS send/receive permissions (Add SQS:SendMessage for FollowFetcher; SQS:ReceiveMessage/DeleteMessage for JobHandler) and DynamoDB read/write for the tables (users, follows, story, feed). Your x-common-policies probably covers it for now.
+
+Add logging & metrics
+
+Add CloudWatch logs and metrics around batch writes, retry counts and job sizes for debugging.
+
+Deploy and test on stage
+
+Deploy SAM, post a status for an author with many followers, monitor SQS and CloudWatch for times to finish.
+
+Optimize — automation, scaling, and test-time tips
+
+Batch size tuning: JOB_CHUNK_SIZE controls how many followerFeed writes each JobHandler will do. Adjust for parallelism and WCU constraints.
+
+If feed table WCU is low in production, you can throttle JobHandler via Lambda reserved concurrency.
+
+Use exponential backoff when re-sending unprocessed batch-writes.
+
+Add a dead-letter queue (DLQ) for JobQueue to capture failing jobs after retries.
+
+For local testing, use small follower counts and local Dynamo (localstack) to iterate quickly.
+
+Abstract SQS sending/receiving into a small helper DAO SqsDao under src/dynamo_daos/SqsDao.ts to ease testing and mocking.
+
+Code snippets & notes you must implement now (copy-paste-ready)
+A. marshall option fix (DynamoDbClientWrapper) — crucial to avoid removeUndefinedValues error:
+
+// ... import marshall
+const marshalledKey = marshall(key, { removeUndefinedValues: true });
+
+
+Use same option wherever marshall is called (get/put/update/batchWrite).
+
+B. Ensure batchWrite retries unprocessed items:
+
+Current wrapper chunks items into 25; add loop like in Milestone doc putUnprocessedItems.
+
+C. Use JSON-serializable status.user fields (avoid class instances when serializing). Use DTO objects (e.g., statusDto.user) rather than class instances to ensure marshall works.
+
+Testing checklist (before pass-off)
+
+Unit tests for wrapper.batchWrite handling unprocessed items.
+
+Integration Jest test for Post -> story append.
+
+Manual full-scale test: populate 10k users & followers; raise WCU; post a status from author with 10k followers; verify followers’ feed items are present within 120s.
+
+Monitor CloudWatch: followFetcher runs, JobHandler runs, number of batch writes, throttling errors (ProvisionedThroughputExceededException).
+
+Add DLQ for JobQueue to catch persistent failures.
+
+Where to put things (summary of file locations)
+
+Template:
+
+tweeter-server/template.yaml (update queues, lambda triggers, env vars)
+
+Lambda handlers:
+
+src/lambda/post/PostStatusLambda.ts — modify to enqueue to PostQueue
+
+src/lambda/queues/FollowFetcherLambda.ts — new
+
+src/lambda/queues/JobHandlerLambda.ts — new
+
+Services:
+
+src/model/service/StatusService.ts — modified to write story and enqueue
+
+DAOs:
+
+src/dynamo_daos/DynamoDbClientWrapper.ts — add marshall option, unprocessed retry
+
+src/dynamo_daos/DynamoStatusDao.ts — ensure postToStory exists
+
+src/dynamo_daos/DynamoFollowDao.ts — implement getAllFollowers that returns string[]
+
+Tools (population):
+
+src/tools/FillUserTableDao.ts
+
+src/tools/FillFollowTableDao.ts
+
+src/tools/BatchLoadScript.ts
+
+Tests:
+
+tests/integration/PostStatus.integration.test.ts
+
+Constants:
+
+src/dynamo_daos/DynamoConstants.ts — add queue env keys and feed table names
+
+If you want, I will:
+
+Produce the minimal exact TypeScript code for FollowFetcherLambda.ts and JobHandlerLambda.ts, and the DynamoDbClientWrapper.batchWrite retry changes, plus the snippet to modify StatusService.postStatus.
+
+Or I can generate the full template.yaml SQS/Lambda snippets with the precise SAM syntax for QueueUrl env variables and permissions.
+
+Which one do you want first? (FollowFetcher + JobHandler + wrapper changes, or the complete template.yaml SQS + env + IAM edits?)

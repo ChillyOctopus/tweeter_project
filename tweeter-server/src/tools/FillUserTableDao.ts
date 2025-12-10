@@ -107,7 +107,7 @@ export class FillUserTableDao {
     }
   }
 
-  async increaseFollowersCount(alias: string, count: number): Promise {
+  async increaseFollowersCount(alias: string, count: number): Promise<boolean> {
     const params = {
       TableName: this.tableName,
       Key: { [this.userAliasAttribute]: alias },

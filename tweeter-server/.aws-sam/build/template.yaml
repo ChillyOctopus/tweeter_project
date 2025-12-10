@@ -1048,6 +1048,14 @@ Resources:
                   headers:
                     Access-Control-Allow-Origin:
                       type: string
+  PostQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: tweeter-post-queue
+  JobQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: tweeter-job-queue
   tweeterLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
@@ -1425,6 +1433,54 @@ Resources:
       CodeUri: postStatusFunction
     Metadata:
       SamResourceId: postStatusFunction
+  followFetcherFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: followFetcherFunction
+      Handler: lambda/queues/FollowFetcherLambda.handler
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - AmazonSESFullAccess
+      - CloudWatchFullAccess
+      - AmazonDynamoDBFullAccess
+      - AmazonS3FullAccess
+      - AmazonSQSFullAccess
+      Events:
+        SQSTrigger:
+          Type: SQS
+          Properties:
+            Queue:
+              Fn::GetAtt:
+              - PostQueue
+              - Arn
+            Enabled: true
+      CodeUri: followFetcherFunction
+    Metadata:
+      SamResourceId: followFetcherFunction
+  jobHandlerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: jobHandlerFunction
+      Handler: lambda/queues/JobHandlerLambda.handler
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - AmazonSESFullAccess
+      - CloudWatchFullAccess
+      - AmazonDynamoDBFullAccess
+      - AmazonS3FullAccess
+      - AmazonSQSFullAccess
+      Events:
+        SQSTrigger:
+          Type: SQS
+          Properties:
+            Queue:
+              Fn::GetAtt:
+              - JobQueue
+              - Arn
+            Enabled: true
+      CodeUri: jobHandlerFunction
+    Metadata:
+      SamResourceId: jobHandlerFunction
   UsersTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -1437,8 +1493,8 @@ Resources:
         KeyType: HASH
       BillingMode: PROVISIONED
       ProvisionedThroughput:
-        ReadCapacityUnits: 1
-        WriteCapacityUnits: 1
+        ReadCapacityUnits: 100
+        WriteCapacityUnits: 100
   AuthTokensTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -1451,8 +1507,11 @@ Resources:
         KeyType: HASH
       BillingMode: PROVISIONED
       ProvisionedThroughput:
-        ReadCapacityUnits: 1
-        WriteCapacityUnits: 1
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      TimeToLiveSpecification:
+        Enabled: true
+        AttributeName: expiresAt
   FollowsTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -1475,14 +1534,14 @@ Resources:
         - AttributeName: follower_alias
           KeyType: RANGE
         ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
+          ReadCapacityUnits: 100
+          WriteCapacityUnits: 100
         Projection:
           ProjectionType: ALL
       BillingMode: PROVISIONED
       ProvisionedThroughput:
-        ReadCapacityUnits: 1
-        WriteCapacityUnits: 1
+        ReadCapacityUnits: 100
+        WriteCapacityUnits: 100
   StoryTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -1499,12 +1558,12 @@ Resources:
         KeyType: RANGE
       BillingMode: PROVISIONED
       ProvisionedThroughput:
-        ReadCapacityUnits: 1
-        WriteCapacityUnits: 1
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
   FeedTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: feed
+      TableName: feed1
       AttributeDefinitions:
       - AttributeName: userAlias
         AttributeType: S
@@ -1517,5 +1576,5 @@ Resources:
         KeyType: RANGE
       BillingMode: PROVISIONED
       ProvisionedThroughput:
-        ReadCapacityUnits: 1
-        WriteCapacityUnits: 1
+        ReadCapacityUnits: 100
+        WriteCapacityUnits: 100

@@ -58,11 +58,11 @@ export namespace StoryTable {
   export const ATTR_USER_OBJECT = "userObject";
 }
 
-export namespace PostQueue { export const URL = "POST_QUEUE_URL"; }
-export namespace JobQueue { export const URL = "JOB_QUEUE_URL"; }
+export namespace PostQueue { export const URL = "https://sqs.us-east-2.amazonaws.com/825765417292/tweeter-post-queue"; }
+export namespace JobQueue { export const URL = "https://sqs.us-east-2.amazonaws.com/825765417292/tweeter-job-queue"; }
 
 export namespace FeedTable {
-  export const TABLE = "feed";
+  export const TABLE = "feed1";
 
   // Primary Keys
   export const PK = "userAlias";

@@ -1,5 +1,6 @@
 import { AuthTokenDto, UserDto } from "tweeter-shared";
 import { DynamoDaoFactory } from "../../dynamo_daos/DynamoDaoFactory";
+import { UsersTable } from "../../dynamo_daos/DynamoConstants";
 
 export class UserService {
   private factory = new DynamoDaoFactory();
@@ -26,14 +27,14 @@ export class UserService {
     await this.verifyToken(token);
     const authDao = this.factory.getAuthDao();
     const raw = await authDao.getUserRaw(user.alias);
-    return raw?.followerCount ?? 0;
+    return raw[UsersTable.ATTR_FOLLOWER_COUNT] ?? 0;
   }
 
   async getFolloweeCount(token: AuthTokenDto, user: UserDto): Promise<number> {
     await this.verifyToken(token);
     const authDao = this.factory.getAuthDao();
     const raw = await authDao.getUserRaw(user.alias);
-    return raw?.followeeCount ?? 0;
+    return raw[UsersTable.ATTR_FOLLOWEE_COUNT] ?? 0;
   }
 
   async follow(token: AuthTokenDto, userToFollow: UserDto): Promise<void> {
@@ -47,13 +48,13 @@ export class UserService {
 
     await authDao.increment_counts(
       followerAlias,
-      "followeeCount",
+      UsersTable.ATTR_FOLLOWEE_COUNT,
       +1
     );
 
     await authDao.increment_counts(
       userToFollow.alias,
-      "followerCount",
+      UsersTable.ATTR_FOLLOWER_COUNT,
       +1
     );
   }
@@ -69,13 +70,13 @@ export class UserService {
 
     await authDao.increment_counts(
       followerAlias,
-      "followeeCount",
+      UsersTable.ATTR_FOLLOWEE_COUNT,
       -1
     );
 
     await authDao.increment_counts(
       userToUnfollow.alias,
-      "followerCount",
+      UsersTable.ATTR_FOLLOWER_COUNT,
       -1
     );
   }

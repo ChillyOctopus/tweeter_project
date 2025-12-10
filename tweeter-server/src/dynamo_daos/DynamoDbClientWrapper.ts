@@ -102,64 +102,64 @@ export class DynamoDbClientWrapper {
     table: string,
     items: Record<string, any>[]
   ): Promise<void> {
-
     const chunks = [];
     for (let i = 0; i < items.length; i += 25) {
       chunks.push(items.slice(i, i + 25));
     }
 
     for (const chunk of chunks) {
-
-      const params = {
+      const request: BatchWriteCommandInput = {
         RequestItems: {
           [table]: chunk.map(item => ({
-            PutRequest: { Item: marshall(item, {removeUndefinedValues: true}) }
+            PutRequest: {
+              Item: item,
+            }
           }))
         }
-      }
+      };
+
+      console.log("FULL BATCH:", JSON.stringify(request, null, 2));
 
       try {
-        const resp = await this.client.send(new BatchWriteCommand(params));
-        await this.putUnprocessedItems(resp, params);
+        const resp = await this.client.send(new BatchWriteCommand(request));
+        await this.retryUnprocessedItems(resp, table);
       } catch (err) {
-        throw new Error(
-          `Error while batch writing users with params: ${params}: \n${err}`
-        );
+        console.error("BatchWrite failed:", JSON.stringify(request, null, 2));
+        throw err;
       }
     }
   }
 
-  private async putUnprocessedItems(
+  private async retryUnprocessedItems(
     resp: BatchWriteCommandOutput,
-    params: BatchWriteCommandInput
-  ) {
+    table: string
+  ): Promise<void> {
     let delay = 10;
     let attempts = 0;
 
     while (
-      resp.UnprocessedItems !== undefined &&
-      Object.keys(resp.UnprocessedItems).length > 0
+      resp.UnprocessedItems &&
+      resp.UnprocessedItems[table] &&
+      resp.UnprocessedItems[table].length > 0
     ) {
       attempts++;
 
       if (attempts > 1) {
-        // Pause before the next attempt
-        await new Promise((resolve) => setTimeout(resolve, delay));
-
-        // Increase pause time for next attempt
-        if (delay < 1000) {
-          delay += 100;
-        }
+        await new Promise(resolve => setTimeout(resolve, delay));
+        if (delay < 1000) delay += 100;
       }
 
       console.log(
-        `Attempt ${attempts}. Processing ${
-          Object.keys(resp.UnprocessedItems).length
-        } unprocessed users.`
+        `Attempt ${attempts}. Retrying ${resp.UnprocessedItems[table].length} unprocessed items.`
       );
 
-      params.RequestItems = resp.UnprocessedItems;
-      resp = await this.client.send(new BatchWriteCommand(params));
+      const retryParams: BatchWriteCommandInput = {
+        RequestItems: {
+          [table]: resp.UnprocessedItems[table]
+        }
+      };
+
+      resp = await this.client.send(new BatchWriteCommand(retryParams));
     }
   }
 

@@ -49,7 +49,7 @@ export class DynamoAuthDao extends AbstractAuthDao {
     if (!tokenRecord) return false;
 
     const now = Date.now();
-    const lastUsed = tokenRecord.lastUsed as number;
+    const lastUsed = tokenRecord[AuthTokensTable.ATTR_LAST_USED] as number;
 
     const isExpired = now - lastUsed > TOKEN_LIFETIME_MS;
     if (isExpired) {

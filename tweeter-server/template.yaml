@@ -687,12 +687,14 @@ Resources:
     Properties:
       TableName: story
       AttributeDefinitions:
-        - AttributeName: alias
+        #We use the userAlias attribute to avoid conflicts with DynamoDB reserved words (user)
+        - AttributeName: userAlias
           AttributeType: S
         - AttributeName: timestamp
           AttributeType: N
       KeySchema:
-        - AttributeName: alias
+        #We use the userAlias attribute to avoid conflicts with DynamoDB reserved words (user)
+        - AttributeName: userAlias
           KeyType: HASH
         - AttributeName: timestamp
           KeyType: RANGE
@@ -706,12 +708,14 @@ Resources:
     Properties:
       TableName: feed
       AttributeDefinitions:
-        - AttributeName: alias
+        #We use the userAlias attribute to avoid conflicts with DynamoDB reserved words (user)
+        - AttributeName: userAlias
           AttributeType: S
         - AttributeName: timestamp
           AttributeType: N
       KeySchema:
-        - AttributeName: alias
+        #We use the userAlias attribute to avoid conflicts with DynamoDB reserved words (user)
+        - AttributeName: userAlias
           KeyType: HASH
         - AttributeName: timestamp
           KeyType: RANGE

@@ -28,7 +28,6 @@ export class StatusService {
     isStory: boolean
   ): Promise<[StatusDto[], boolean]> {
     const statusDao = this.factory.getStatusDao();
-
     if (isStory) {
       const result = await statusDao.getStory(userAlias, lastItem);
       return [result.items, result.hasMore]
@@ -40,24 +39,16 @@ export class StatusService {
 
   public async postStatus(
     authToken: AuthTokenDto,
-    alias: string,
-    content: string,
-    timestamp: number
+    statusDto: StatusDto
   ): Promise<void> {
     this.validateAuth(authToken);
     
-    const userDao = this.factory.getAuthDao();
     const statusDao = this.factory.getStatusDao();
     const followDao = this.factory.getFollowDao();
+    await statusDao.postToStory(statusDto.user.alias, statusDto);
 
-    const dtoUser = await userDao.findUserByAlias(authToken.alias);
-    const dtoStatus = {post: content, user: dtoUser!, timestamp: timestamp};
-    await statusDao.postToStory(alias, dtoStatus);
-
-    const followees = await followDao.getAllFollowers(alias);
-
-    await statusDao.postToFeedBatch(followees, dtoStatus)
-      
+    const followees = await followDao.getAllFollowers(statusDto.user.alias);
+    await statusDao.postToFeedBatch(followees, statusDto)
   }
 
   private validateAuth(authToken: AuthTokenDto): void {

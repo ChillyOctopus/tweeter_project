@@ -1,10 +1,10 @@
 
 import { PostStatusRequest, TweeterResponse } from "tweeter-shared";
-import { PostService } from "../../model/service/PostService";
+import { StatusService } from "../../model/service/StatusService";
 
 export const handler = async (request: PostStatusRequest): Promise<TweeterResponse> => {
-    const postService = new PostService();
-    await postService.postStatus(request.token, request.status);
+    const statusService = new StatusService();
+    await statusService.postStatus(request.token, request.status);
     return {
         success: true,
         message: null

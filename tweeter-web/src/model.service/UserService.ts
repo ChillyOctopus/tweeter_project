@@ -5,7 +5,11 @@ export class UserService {
 
     public async getUser (authToken: AuthToken, alias: string): Promise<User | null> {
         const request: UserRequest = {
-            token: authToken as any,
+            token: {
+                token: authToken.token,
+                timestamp: authToken.timestamp,
+                alias: authToken.alias
+            },
             userAlias: alias
         };
         return ServerFacade.instance.getUser(request);

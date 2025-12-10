@@ -24,7 +24,7 @@ import { ClientCommunicator } from "./ClientCommunicator";
 export class ServerFacade {
   public static instance: ServerFacade = new ServerFacade();
 
-  private SERVER_URL = "https://y57wcbkskj.execute-api.us-east-2.amazonaws.com/Stage";
+  private SERVER_URL = "https://1t88lia4pj.execute-api.us-east-2.amazonaws.com/Stage";
 
   private clientCommunicator = new ClientCommunicator(this.SERVER_URL);
 
@@ -186,10 +186,10 @@ export class ServerFacade {
   public async postStatus(
     request: PostStatusRequest
   ): Promise<TweeterResponse> {
-    const reponse = await this.clientCommunicator.doPost<any, any>(
-      request,
-      "/post/postStatus"
-    );
+    const reponse = await this.clientCommunicator.doPost<
+    PostStatusRequest,
+    TweeterResponse
+    >(request, "/post/postStatus");
     if (!reponse.success) {
       console.error(reponse);
       throw new Error(reponse.message ?? undefined);

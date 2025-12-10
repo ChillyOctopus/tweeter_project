@@ -44,23 +44,25 @@ export namespace StoryTable {
   export const TABLE = "story";
 
   // Primary Keys
-  export const PK = "alias";
+  export const PK = "userAlias";
   export const SK = "timestamp";
 
   // Attributes
-  export const ATTR_ALIAS = "alias";
+  export const ATTR_ALIAS = "userAlias";
   export const ATTR_TIMESTAMP = "timestamp";
-  export const ATTR_CONTENT = "content";
+  export const ATTR_POST = "post";
+  export const ATTR_USER_OBJECT = "userObject";
 }
 
 export namespace FeedTable {
   export const TABLE = "feed";
 
   // Primary Keys
-  export const PK = "alias";
+  export const PK = "userAlias";
   export const SK = "timestamp";
 
   // Attributes
-  export const ATTR_ALIAS = "alias";
+  export const ATTR_ALIAS = "userAlias";
   export const ATTR_TIMESTAMP = "timestamp";
+  export const ATTR_USER_OBJECT = "userObject";
 }

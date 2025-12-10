@@ -49,10 +49,13 @@ const UserInfo = () => {
   const switchToLoggedInUser = (event: React.MouseEvent): void => {
     event.preventDefault();
     if (!currentUser) return;
+
     setDisplayedUser(currentUser);
-    const segments = location.pathname.split("/@");
-    const baseUrl = segments.length > 1 ? segments[0] : "/";
-    navigate(`${baseUrl}/${currentUser.alias}`);
+
+    const parts = location.pathname.split("/").filter(Boolean);
+    const base = parts[0] || "";
+
+    navigate(`/${base}/${currentUser.alias}`);
   };
 
   const handleFollow = (event: React.MouseEvent): void => {

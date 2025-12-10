@@ -1488,12 +1488,12 @@ Resources:
     Properties:
       TableName: story
       AttributeDefinitions:
-      - AttributeName: alias
+      - AttributeName: userAlias
         AttributeType: S
       - AttributeName: timestamp
         AttributeType: N
       KeySchema:
-      - AttributeName: alias
+      - AttributeName: userAlias
         KeyType: HASH
       - AttributeName: timestamp
         KeyType: RANGE
@@ -1506,12 +1506,12 @@ Resources:
     Properties:
       TableName: feed
       AttributeDefinitions:
-      - AttributeName: alias
+      - AttributeName: userAlias
         AttributeType: S
       - AttributeName: timestamp
         AttributeType: N
       KeySchema:
-      - AttributeName: alias
+      - AttributeName: userAlias
         KeyType: HASH
       - AttributeName: timestamp
         KeyType: RANGE

@@ -72,6 +72,38 @@ export class DynamoFollowDao extends AbstractFollowDao {
     };
   }
 
+  async getAllFollowers(alias: string, lastItem: UserDto | null) {
+    const res = await this.db.query({
+      table: FollowsTable.TABLE,
+      index: FollowsTable.GSI_FOLLOWEES,
+      keyConditionExpression: `${FollowsTable.GSI_FOLLOWEES_PK} = :a`,
+      expressionValues: { ":a": alias },
+      exclusiveStartKey: lastItem
+        ? {
+            [FollowsTable.GSI_FOLLOWEES_PK]: alias,
+            [FollowsTable.GSI_FOLLOWEES_SK]: lastItem.alias,
+          }
+        : undefined,
+    });
+    
+    let runningTotal = res.items;
+    while (res.lastKey) {
+      const nextRes = await this.db.query({
+        table: FollowsTable.TABLE,
+        index: FollowsTable.GSI_FOLLOWEES,
+        keyConditionExpression: `${FollowsTable.GSI_FOLLOWEES_PK} = :a`,
+        expressionValues: { ":a": alias },
+        exclusiveStartKey: res.lastKey,
+      });
+      runningTotal = runningTotal.concat(nextRes.items);
+      res.lastKey = nextRes.lastKey;
+    }
+    return {
+      items: runningTotal.map(item => item[FollowsTable.ATTR_FOLLOWER_ALIAS]),
+      hasMore: false,
+    };
+  }
+
   async getFollowees(alias: string, lastItem: UserDto | null) {
     const res = await this.db.query({
       table: FollowsTable.TABLE,
@@ -89,6 +121,36 @@ export class DynamoFollowDao extends AbstractFollowDao {
     return {
       items: res.items.map(item => item[FollowsTable.ATTR_FOLLOWEE_ALIAS]),
       hasMore: !!res.lastKey,
+    };
+  }
+
+  async getAllFollowees(alias: string, lastItem: UserDto | null) {
+    const res = await this.db.query({
+      table: FollowsTable.TABLE,
+      keyConditionExpression: `${FollowsTable.PK} = :a`,
+      expressionValues: { ":a": alias },
+      limit: 25,
+      exclusiveStartKey: lastItem
+        ? {
+            [FollowsTable.PK]: alias,
+            [FollowsTable.SK]: lastItem.alias,
+          }
+        : undefined,
+    });
+    let runningTotal = res.items;
+    while (res.lastKey) {
+      const nextRes = await this.db.query({
+        table: FollowsTable.TABLE,
+        keyConditionExpression: `${FollowsTable.PK} = :a`,
+        expressionValues: { ":a": alias },
+        exclusiveStartKey: res.lastKey,
+      });
+      runningTotal = runningTotal.concat(nextRes.items);
+      res.lastKey = nextRes.lastKey;
+    }
+    return {
+      items: runningTotal.map(item => item[FollowsTable.ATTR_FOLLOWEE_ALIAS]),
+      hasMore: false,
     };
   }
 }

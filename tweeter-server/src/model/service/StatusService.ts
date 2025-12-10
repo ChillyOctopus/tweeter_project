@@ -1,5 +1,6 @@
 import { StatusDto, AuthTokenDto } from "tweeter-shared";
 import { DynamoDaoFactory } from "../../dynamo_daos/DynamoDaoFactory";
+import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 
 export class StatusService {
   private factory = new DynamoDaoFactory();
@@ -42,21 +43,17 @@ export class StatusService {
     statusDto: StatusDto
   ): Promise<void> {
     this.validateAuth(authToken);
-    
     const statusDao = this.factory.getStatusDao();
-    const followDao = this.factory.getFollowDao();
+    // 1. write to story
     await statusDao.postToStory(statusDto.user.alias, statusDto);
 
-    let followeesResults = await followDao.getFollowees(statusDto.user.alias, null);
-    let totalFollowees = followeesResults.items;
-    
-    while (followeesResults.hasMore) { 
-      followeesResults = await followDao.getFollowees(statusDto.user.alias, followeesResults.items[followeesResults.items.length - 1]);
-      totalFollowees = totalFollowees.concat(followeesResults.items);
-    }
-
-    const followees = totalFollowees.map(f => f.alias);
-    await statusDao.postToFeedBatch(followees, statusDto)
+    // 2. enqueue PostQueue message
+    const sqs = new SQSClient({});
+    await sqs.send(new SendMessageCommand({
+      QueueUrl: process.env.POST_QUEUE_URL,
+      MessageBody: JSON.stringify({ authorAlias: statusDto.user.alias, status: statusDto })
+    }));
+    // return immediately (client awaited function will return)
   }
 
   private validateAuth(authToken: AuthTokenDto): void {

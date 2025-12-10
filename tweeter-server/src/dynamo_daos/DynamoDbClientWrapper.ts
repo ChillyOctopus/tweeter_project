@@ -5,8 +5,12 @@ import {
   UpdateItemCommand,
   DeleteItemCommand,
   QueryCommand,
-  BatchWriteItemCommand,
 } from "@aws-sdk/client-dynamodb";
+import {
+  BatchWriteCommand,
+  BatchWriteCommandInput,
+  BatchWriteCommandOutput,
+} from "@aws-sdk/lib-dynamodb";
 import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
 
 export class DynamoDbClientWrapper {
@@ -21,7 +25,7 @@ export class DynamoDbClientWrapper {
     const response = await this.client.send(
       new GetItemCommand({
         TableName: table,
-        Key: marshall(key),
+        Key: marshall(key, { removeUndefinedValues: true }),
       })
     );
 
@@ -32,10 +36,10 @@ export class DynamoDbClientWrapper {
     await this.client.send(
       new PutItemCommand({
         TableName: table,
-        Item: marshall(item),
+        Item: marshall(item, { removeUndefinedValues: true }),
         ConditionExpression: conditionExpression,
         ExpressionAttributeNames: expressionNames,
-        ExpressionAttributeValues: expressionValues ? marshall(expressionValues) : undefined,
+        ExpressionAttributeValues: expressionValues ? marshall(expressionValues, { removeUndefinedValues: true }) : undefined,
       })
     );
   }
@@ -44,7 +48,7 @@ export class DynamoDbClientWrapper {
     await this.client.send(
       new DeleteItemCommand({
         TableName: table,
-        Key: marshall(key),
+        Key: marshall(key, { removeUndefinedValues: true }),
         ConditionExpression: conditionExpression
       })
     );
@@ -54,9 +58,9 @@ export class DynamoDbClientWrapper {
     await this.client.send(
       new UpdateItemCommand({
         TableName: table,
-        Key: marshall(key),
+        Key: marshall(key, { removeUndefinedValues: true }),
         UpdateExpression: updateExpression,
-        ExpressionAttributeValues: marshall(expressionValues),
+        ExpressionAttributeValues: marshall(expressionValues, { removeUndefinedValues: true }),
         ExpressionAttributeNames: expressionNames,
         ConditionExpression: conditionExpression,
       })
@@ -80,9 +84,9 @@ export class DynamoDbClientWrapper {
         TableName: params.table,
         IndexName: params.index,
         KeyConditionExpression: params.keyConditionExpression,
-        ExpressionAttributeValues: marshall(params.expressionValues),
+        ExpressionAttributeValues: marshall(params.expressionValues, { removeUndefinedValues: true }),
         Limit: params.limit,
-        ExclusiveStartKey: params.exclusiveStartKey ? marshall(params.exclusiveStartKey) : undefined,
+        ExclusiveStartKey: params.exclusiveStartKey ? marshall(params.exclusiveStartKey, { removeUndefinedValues: true }) : undefined,
         ScanIndexForward: params.scanForward ?? true,
       })
     );
@@ -105,15 +109,58 @@ export class DynamoDbClientWrapper {
     }
 
     for (const chunk of chunks) {
-      const requestItems = {
-        [table]: chunk.map(item => ({
-          PutRequest: { Item: marshall(item) }
-        }))
-      };
 
-      await this.client.send(
-        new BatchWriteItemCommand({ RequestItems: requestItems })
-      );
+      const params = {
+        RequestItems: {
+          [table]: chunk.map(item => ({
+            PutRequest: { Item: marshall(item, {removeUndefinedValues: true}) }
+          }))
+        }
+      }
+
+      try {
+        const resp = await this.client.send(new BatchWriteCommand(params));
+        await this.putUnprocessedItems(resp, params);
+      } catch (err) {
+        throw new Error(
+          `Error while batch writing users with params: ${params}: \n${err}`
+        );
+      }
     }
   }
+
+  private async putUnprocessedItems(
+    resp: BatchWriteCommandOutput,
+    params: BatchWriteCommandInput
+  ) {
+    let delay = 10;
+    let attempts = 0;
+
+    while (
+      resp.UnprocessedItems !== undefined &&
+      Object.keys(resp.UnprocessedItems).length > 0
+    ) {
+      attempts++;
+
+      if (attempts > 1) {
+        // Pause before the next attempt
+        await new Promise((resolve) => setTimeout(resolve, delay));
+
+        // Increase pause time for next attempt
+        if (delay < 1000) {
+          delay += 100;
+        }
+      }
+
+      console.log(
+        `Attempt ${attempts}. Processing ${
+          Object.keys(resp.UnprocessedItems).length
+        } unprocessed users.`
+      );
+
+      params.RequestItems = resp.UnprocessedItems;
+      resp = await this.client.send(new BatchWriteCommand(params));
+    }
+  }
+
 }

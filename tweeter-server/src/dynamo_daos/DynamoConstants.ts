@@ -8,6 +8,10 @@ export namespace UsersTable {
 
   // Attributes
   export const ATTR_ALIAS = "alias";
+  export const ATTR_FIRST_NAME = "first_name";
+  export const ATTR_LAST_NAME = "last_name";
+  export const ATTR_IMAGE_URL = "image_url";
+  export const ATTR_PASSWORD_HASH = "password_hash";
   export const ATTR_FOLLOWER_COUNT = "follower_count";
   export const ATTR_FOLLOWEE_COUNT = "followee_count";
 }
@@ -22,7 +26,6 @@ export namespace AuthTokensTable {
   export const ATTR_LAST_USED = "lastUsed";
   export const ATTR_EXPIRES_AT = "expiresAt";
 }
-
 
 export namespace FollowsTable {
   export const TABLE = "follow";
@@ -54,6 +57,9 @@ export namespace StoryTable {
   export const ATTR_POST = "post";
   export const ATTR_USER_OBJECT = "userObject";
 }
+
+export namespace PostQueue { export const URL = "POST_QUEUE_URL"; }
+export namespace JobQueue { export const URL = "JOB_QUEUE_URL"; }
 
 export namespace FeedTable {
   export const TABLE = "feed";

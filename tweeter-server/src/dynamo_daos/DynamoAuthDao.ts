@@ -10,12 +10,12 @@ export class DynamoAuthDao extends AbstractAuthDao {
   async createUserRecord(user: UserDto, passwordHash: string): Promise<void> {
     await this.db.put(UsersTable.TABLE, {
       [UsersTable.ATTR_ALIAS]: user.alias,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      imageUrl: user.imageUrl,
-      passwordHash,
-      followerCount: 0,
-      followeeCount: 0,
+      [UsersTable.ATTR_FIRST_NAME]: user.firstName,
+      [UsersTable.ATTR_LAST_NAME]: user.lastName,
+      [UsersTable.ATTR_IMAGE_URL]: user.imageUrl,
+      [UsersTable.ATTR_PASSWORD_HASH]: passwordHash,
+      [UsersTable.ATTR_FOLLOWER_COUNT]: 0,
+      [UsersTable.ATTR_FOLLOWEE_COUNT]: 0,
     });
   }
 
@@ -36,7 +36,7 @@ export class DynamoAuthDao extends AbstractAuthDao {
   async getUserDtoByAlias(alias: string): Promise<UserDto | null> {
     const raw = await this.getUserRaw(alias);
     if (!raw) return null;
-    return new UserDto(raw.firstName, raw.lastName, raw.alias, raw.imageUrl);
+    return new UserDto(raw[UsersTable.ATTR_FIRST_NAME], raw[UsersTable.ATTR_LAST_NAME], raw[UsersTable.ATTR_ALIAS], raw[UsersTable.ATTR_IMAGE_URL]);
   }
 
   // ---------- AuthToken ----------

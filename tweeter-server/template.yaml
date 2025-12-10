@@ -323,6 +323,16 @@ Resources:
   #     Properties:
   #       QueueName: MyQueue
 
+  PostQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: tweeter-post-queue
+
+  JobQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: tweeter-job-queue
+
 
   #
   # Lambda Layer (reused by all Lambda functions)
@@ -583,43 +593,37 @@ Resources:
   #             Queue: !GetAtt MyQueue.Arn
   #             Enabled: true
 
+  followFetcherFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: followFetcherFunction
+      Handler: lambda/queues/FollowFetcherLambda.handler
+      Policies: *commonPolicies
+      Events:
+        SQSTrigger:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt PostQueue.Arn
+            Enabled: true
+            # BatchSize: 1
+
+  jobHandlerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: jobHandlerFunction
+      Handler: lambda/queues/JobHandlerLambda.handler
+      Policies: *commonPolicies
+      Events:
+        SQSTrigger:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt JobQueue.Arn
+            Enabled: true
+            # BatchSize: 5                  # Change this one to control how many messages your Lambda function receives from SQS at a time
+            # MaximumBatchingWindowInSeconds: 2
 #
 # DynamoDB Tables
 #
-
-  # visitTable:  ##### TODO: Change "visitTable" to match the table name. This doesn't
-  #              #####       need to be the actual table name, just a unique identifier.
-  #   Type: AWS::DynamoDB::Table
-  #   Properties:
-  #     TableName: visit  ##### TODO: Set the actual table name. This is what your code will use to identify this table.
-  #     AttributeDefinitions:
-  #       ##### TODO: Add any attributes that will be used as partition or sort keys for the table or any indexes.
-  #       - AttributeName: person_name
-  #         AttributeType: S  ##### TODO: Set the data type for this attribute. S for string, N for number, etc.
-  #       - AttributeName: place_name
-  #         AttributeType: S
-  #     KeySchema:
-  #       - AttributeName: person_name  ##### TODO: Set the table partition key name
-  #         KeyType: HASH
-  #       - AttributeName: place_name  ##### TODO: Set the table sort key name. Delete these
-  #         KeyType: RANGE             #####       two lines if the table has no sort key.
-  #     BillingMode: PROVISIONED
-  #     ProvisionedThroughput:
-  #       ReadCapacityUnits: 1   ##### TODO: Set the table's Read and Write capacities. Leaving these at
-  #       WriteCapacityUnits: 1  #####       one is fine for now, but you may need to change them later.
-  #     ##### TODO: If you don't need an index for this table, delete the GlobalSecondaryIndexes property and all its subproperties.
-  #     GlobalSecondaryIndexes:
-  #       - IndexName: place_index  ##### TODO: Set the actual index name. This is what your code will use to identify this index.
-  #         KeySchema:
-  #           - AttributeName: place_name  ##### TODO: Set the index partition key name
-  #             KeyType: HASH
-  #           - AttributeName: person_name  ##### TODO: Set the index sort key name. Delete these
-  #             KeyType: RANGE              #####       two lines if the index has no sort key.
-  #         ProvisionedThroughput:
-  #           ReadCapacityUnits: 1   ##### TODO: Same thing. Indexes have their own read/write
-  #           WriteCapacityUnits: 1  #####       capacities that you may need to change.
-  #         Projection:
-  #           ProjectionType: ALL
 
   UsersTable:
     Type: AWS::DynamoDB::Table

@@ -12,16 +12,17 @@ export namespace UsersTable {
   export const ATTR_FOLLOWEE_COUNT = "followee_count";
 }
 
+export const TOKEN_LIFETIME_MS = 120 * 60 * 1000; // 120 minutes
 export namespace AuthTokensTable {
   export const TABLE = "auth_tokens";
 
-  // Primary Key
   export const PK = "token";
 
-  // Attributes
   export const ATTR_TOKEN = "token";
-  export const ATTR_TIMESTAMP = "timestamp";
+  export const ATTR_LAST_USED = "lastUsed";
+  export const ATTR_EXPIRES_AT = "expiresAt";
 }
+
 
 export namespace FollowsTable {
   export const TABLE = "follow";
@@ -64,5 +65,6 @@ export namespace FeedTable {
   // Attributes
   export const ATTR_ALIAS = "userAlias";
   export const ATTR_TIMESTAMP = "timestamp";
+  export const ATTR_POST = "post";
   export const ATTR_USER_OBJECT = "userObject";
 }

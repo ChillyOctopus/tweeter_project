@@ -30,7 +30,7 @@ const UserItem = (props: Props) => {
               -{" "}
               <Link
                 to={`${props.featurePath}/${props.user.alias}`}
-                onClick={navigateToUser}
+                onClick={(e) => navigateToUser(e, props.user.alias)}
               >
                 {props.user.alias}
               </Link>

@@ -17,7 +17,7 @@ export class AuthService {
     const authDao = this.factory.getAuthDao();
     const s3Dao = this.factory.getS3Dao();
 
-    const existing = await authDao.findUserByAlias(alias);
+    const existing = await authDao.getUserDtoByAlias(alias);
     if (existing) throw new Error("Alias already exists");
 
     const fileName = `${alias}.${imageFileExtension}`;
@@ -36,7 +36,7 @@ export class AuthService {
   async login(alias: string, password: string): Promise<[UserDto, AuthTokenDto]> {
     const authDao = this.factory.getAuthDao();
 
-    const raw = await authDao.getUser(alias);
+    const raw = await authDao.getUserRaw(alias);
     if (!raw) throw new Error("Invalid username");
 
     const valid = await bcrypt.compare(password, raw.passwordHash);

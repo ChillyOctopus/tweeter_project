@@ -43,7 +43,7 @@ export class UserService {
     public async follow(authToken: AuthToken, userToFollow: User): Promise<void> {
         const request: AToBRequest = {
             token: authToken.dto,
-            userAliasA: "", // We determine user A from the auth token on the server side
+            userAliasA: "",
             userAliasB: userToFollow.alias
         };
         await ServerFacade.instance.follow(request);
@@ -52,7 +52,7 @@ export class UserService {
     public async unfollow(authToken: AuthToken, userToUnfollow: User): Promise<void> {
         const request: AToBRequest = {
             token: authToken.dto,
-            userAliasA: "", // We determine user A from the auth token on the server side
+            userAliasA: "",
             userAliasB: userToUnfollow.alias
         };
         await ServerFacade.instance.unfollow(request);

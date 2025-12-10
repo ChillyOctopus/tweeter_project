@@ -20,17 +20,6 @@ export class DynamoFollowDao extends AbstractFollowDao {
     });
   }
 
-  async getAllFollowers(alias: string): Promise<string[]> {
-    const res = await this.db.query({
-      table: FollowsTable.TABLE,
-      index: FollowsTable.GSI_FOLLOWEES,
-      keyConditionExpression: `${FollowsTable.GSI_FOLLOWEES_PK} = :a`,
-      expressionValues: { ":a": alias },
-    });
-
-    return res.items.map(i => i[FollowsTable.ATTR_FOLLOWER_ALIAS]);
-  }
-
   async isFollower(follower: string, followee: string): Promise<boolean> {
     const res = await this.db.query({
       table: FollowsTable.TABLE,
@@ -78,7 +67,7 @@ export class DynamoFollowDao extends AbstractFollowDao {
     });
 
     return {
-      items: res.items.map(i => new UserDto("", "", i[FollowsTable.ATTR_FOLLOWER_ALIAS], "")),
+      items: res.items.map(item => item[FollowsTable.ATTR_FOLLOWER_ALIAS]),
       hasMore: !!res.lastKey,
     };
   }
@@ -98,7 +87,7 @@ export class DynamoFollowDao extends AbstractFollowDao {
     });
 
     return {
-      items: res.items.map(i => new UserDto("", "", i[FollowsTable.ATTR_FOLLOWEE_ALIAS], "")),
+      items: res.items.map(item => item[FollowsTable.ATTR_FOLLOWEE_ALIAS]),
       hasMore: !!res.lastKey,
     };
   }

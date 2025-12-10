@@ -1,7 +1,7 @@
 import { AuthTokenDto, UserDto } from "tweeter-shared";
 import { DynamoDbClientWrapper } from "./DynamoDbClientWrapper";
 import { AbstractAuthDao } from "../abstract_daos/AbstractAuthDao";
-import { UsersTable, AuthTokensTable } from "./DynamoConstants";
+import { UsersTable, AuthTokensTable, TOKEN_LIFETIME_MS } from "./DynamoConstants";
 
 export class DynamoAuthDao extends AbstractAuthDao {
   private db = new DynamoDbClientWrapper();
@@ -28,32 +28,48 @@ export class DynamoAuthDao extends AbstractAuthDao {
     );
   }
 
-  async validateAuthToken(authToken: AuthTokenDto): Promise<boolean> {
-    return true;
-    const tokenRecord = await this.db.get(
-      AuthTokensTable.TABLE,
-      { [AuthTokensTable.PK]: authToken.token }
-    );
-    return tokenRecord !== null;
-  }
-
-  async getUser(alias: string): Promise<any | null> {
+  async getUserRaw(alias: string): Promise<any | null> {
     const normalized = alias.startsWith("@") ? alias.substring(1) : alias;
     return this.db.get(UsersTable.TABLE, { alias: normalized });
   }
 
-  async findUserByAlias(alias: string): Promise<UserDto | null> {
-    const raw = await this.getUser(alias);
+  async getUserDtoByAlias(alias: string): Promise<UserDto | null> {
+    const raw = await this.getUserRaw(alias);
     if (!raw) return null;
     return new UserDto(raw.firstName, raw.lastName, raw.alias, raw.imageUrl);
   }
 
   // ---------- AuthToken ----------
+  async validateAuthToken(authToken: AuthTokenDto): Promise<boolean> {
+    const tokenRecord = await this.db.get(
+      AuthTokensTable.TABLE,
+      { [AuthTokensTable.PK]: authToken.token }
+    );
+
+    if (!tokenRecord) return false;
+
+    const now = Date.now();
+    const lastUsed = tokenRecord.lastUsed as number;
+
+    const isExpired = now - lastUsed > TOKEN_LIFETIME_MS;
+    if (isExpired) {
+      await this.deleteAuthToken(authToken.token);
+      return false;
+    }
+
+    await this.refreshAuthTokenUsage(authToken.token, now);
+
+    return true;
+  }
+
   async storeAuthToken(tokenValue: string, alias: string, timestamp: number): Promise<void> {
+    const lastUsed = timestamp;
+    const expiresAt = Math.floor((timestamp + TOKEN_LIFETIME_MS) / 1000);
+
     await this.db.put(AuthTokensTable.TABLE, {
-      [AuthTokensTable.ATTR_TOKEN]: tokenValue,
-      alias,
-      timestamp,
+      [AuthTokensTable.PK]: tokenValue,
+      [AuthTokensTable.ATTR_LAST_USED]: lastUsed,
+      [AuthTokensTable.ATTR_EXPIRES_AT]: expiresAt
     });
   }
 
@@ -63,4 +79,19 @@ export class DynamoAuthDao extends AbstractAuthDao {
     });
     return true;
   }
+  
+  async refreshAuthTokenUsage(tokenValue: string, now: number): Promise<void> {
+    const expiresAt = Math.floor((now + TOKEN_LIFETIME_MS) / 1000);
+
+    await this.db.update(
+      AuthTokensTable.TABLE,
+      { [AuthTokensTable.PK]: tokenValue },
+      "set lastUsed = :now, expiresAt = :ttl",
+      {
+        ":now": now,
+        ":ttl": expiresAt
+      }
+    );
+  }
+
 }

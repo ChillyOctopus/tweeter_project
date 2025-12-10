@@ -7,7 +7,7 @@ export class UserService {
   async getUser(token: AuthTokenDto, alias: string): Promise<UserDto | null> {
     await this.verifyToken(token);
     const authDao = this.factory.getAuthDao();
-    return authDao.getUser(alias);
+    return authDao.getUserDtoByAlias(alias);
   }
 
   async getIsFollowerStatus(
@@ -25,14 +25,14 @@ export class UserService {
   async getFollowerCount(token: AuthTokenDto, user: UserDto): Promise<number> {
     await this.verifyToken(token);
     const authDao = this.factory.getAuthDao();
-    const raw = await authDao.getUser(user.alias);
+    const raw = await authDao.getUserRaw(user.alias);
     return raw?.followerCount ?? 0;
   }
 
   async getFolloweeCount(token: AuthTokenDto, user: UserDto): Promise<number> {
     await this.verifyToken(token);
     const authDao = this.factory.getAuthDao();
-    const raw = await authDao.getUser(user.alias);
+    const raw = await authDao.getUserRaw(user.alias);
     return raw?.followeeCount ?? 0;
   }
 

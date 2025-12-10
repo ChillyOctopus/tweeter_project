@@ -1,17 +1,11 @@
 import { useContext } from "react";
 import { UserInfoActionsContext, UserInfoContext } from "./UserInfoContexts";
 import { useNavigate } from "react-router-dom";
-import { AuthToken, User } from "tweeter-shared";
 import { useMessageActions } from "../toaster/MessageHooks";
 import { UserService } from "../../model.service/UserService";
 
 export const useUserInfoActions = () => useContext(UserInfoActionsContext);
 export const useUserInfo = () => useContext(UserInfoContext);
-
-const extractAlias = (value: string): string => {
-  const index = value.indexOf("@");
-  return value.substring(index);
-};
 
 export const useUserNavigation = (featurePath: string) => {
   const { displayErrorMessage } = useMessageActions();
@@ -20,19 +14,22 @@ export const useUserNavigation = (featurePath: string) => {
   const navigate = useNavigate();
   const userService = new UserService();
 
-  return async (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>): Promise<void> => {
+  return async (
+    event: React.MouseEvent<HTMLAnchorElement>,
+    alias: string
+  ): Promise<void> => {
+
     event.preventDefault();
 
     try {
-      const alias = extractAlias(event.target.toString());
       const toUser = await userService.getUser(authToken!, alias);
-
       if (toUser && (!displayedUser || !toUser.equals(displayedUser))) {
         setDisplayedUser(toUser);
         navigate(`${featurePath}/${toUser.alias}`);
       }
-    } catch (error) {
-      displayErrorMessage(`Failed to get user because of exception: ${error}`);
+    } catch (error: any) {
+      displayErrorMessage(`Failed to get user because of exception: ${error.errorMessage || error.message || error}`);
     }
   };
 };
+

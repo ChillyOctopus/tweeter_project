@@ -19,6 +19,7 @@ export class DynamoStatusDao extends AbstractStatusDao {
     const items = followerAliases.map(alias => ({
       [FeedTable.PK]: alias,
       [FeedTable.SK]: status.timestamp,
+      [FeedTable.ATTR_POST]: status.post,
       [FeedTable.ATTR_USER_OBJECT]: JSON.stringify(status.user),
     }));
     await this.db.batchWrite(FeedTable.TABLE, items);

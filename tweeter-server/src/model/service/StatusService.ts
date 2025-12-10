@@ -47,7 +47,15 @@ export class StatusService {
     const followDao = this.factory.getFollowDao();
     await statusDao.postToStory(statusDto.user.alias, statusDto);
 
-    const followees = await followDao.getAllFollowers(statusDto.user.alias);
+    let followeesResults = await followDao.getFollowees(statusDto.user.alias, null);
+    let totalFollowees = followeesResults.items;
+    
+    while (followeesResults.hasMore) { 
+      followeesResults = await followDao.getFollowees(statusDto.user.alias, followeesResults.items[followeesResults.items.length - 1]);
+      totalFollowees = totalFollowees.concat(followeesResults.items);
+    }
+
+    const followees = totalFollowees.map(f => f.alias);
     await statusDao.postToFeedBatch(followees, statusDto)
   }
 

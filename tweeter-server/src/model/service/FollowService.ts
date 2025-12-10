@@ -28,7 +28,11 @@ export class FollowService {
     fetchFollowers: boolean
   ): Promise<[UserDto[], boolean]> {
     const followDao = this.factory.getFollowDao();
+    const authDao = this.factory.getAuthDao();
     const results = fetchFollowers ? await followDao.getFollowers(userAlias, lastItem) : await followDao.getFollowees(userAlias, lastItem);
+    for (let i = 0; i < results.items.length; i++) {
+      results.items[i] = await authDao.getUserDtoByAlias(results.items[i]);
+    }
     return [results.items, results.hasMore]
   }
 
